@@ -367,6 +367,61 @@ html, body {
   to { transform: translateY(110vh) rotate(540deg); opacity: .9; }
 }
 
+/* ===== お金トークン（硬貨・紙幣） ===== */
+.money {
+  border: none;
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: inline-flex; flex-direction: column; align-items: center; gap: 2px;
+  font-weight: 900; cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0,0,0,.16);
+  min-width: 74px;
+}
+.money:active { transform: scale(.94); }
+.money__val { font-size: 1.15rem; line-height: 1; }
+.money__cnt { font-size: .68rem; font-weight: 700; opacity: .9; }
+.money.is-empty { opacity: .32; cursor: not-allowed; }
+.money--sm { min-width: 56px; padding: 6px 12px; box-shadow: none; }
+.money--sm .money__val { font-size: 1rem; }
+/* 紙幣 */
+.money--note { color: #fff; }
+.denom-1000 { background: linear-gradient(135deg,#ff8a5c,#e8543a); } /* $10 */
+.denom-500  { background: linear-gradient(135deg,#5fd39b,#2faf78); } /* $5 */
+.denom-200  { background: linear-gradient(135deg,#b48cff,#8a5cf0); } /* $2 */
+/* 硬貨 */
+.money--coin { color: #5a4a16; }
+.denom-100 { background: radial-gradient(circle at 34% 28%,#ffe680,#f4b81f); } /* $1 金 */
+.denom-50  { background: radial-gradient(circle at 34% 28%,#f3f5f8,#c4ccd6); } /* 銀 */
+.denom-20  { background: radial-gradient(circle at 34% 28%,#f3f5f8,#c4ccd6); }
+.denom-10  { background: radial-gradient(circle at 34% 28%,#f3f5f8,#c4ccd6); }
+.denom-5   { background: radial-gradient(circle at 34% 28%,#f6c89a,#cf915a); } /* 銅 */
+
+/* 支払いパレット */
+.wallet-pay { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.wallet-pay .money { min-height: 60px; justify-content: center; }
+
+/* 支払いサマリー */
+.pay-summary { background:#fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 18px; }
+.pay-row { display:flex; justify-content: space-between; align-items: baseline; padding: 4px 0; }
+.pay-label { color: var(--ink-soft); font-weight: 800; }
+.pay-price { font-size: 1.5rem; font-weight: 900; color: var(--ink); }
+.pay-paid { font-size: 1.3rem; font-weight: 900; color: var(--mint-dark); }
+.pay-change { margin-top: 8px; text-align: center; font-weight: 900; border-radius: 12px; padding: 8px; }
+.pay-change.is-change { background:#fff6e0; color:#c98a00; }
+.pay-change.is-exact { background:#eafff5; color: var(--mint-dark); }
+.pay-actions { justify-content: center; margin: 12px 0 0; }
+
+/* おさいふエディタ */
+.wallet-edit { display: flex; flex-direction: column; gap: 8px; }
+.wallet-row { display:flex; align-items:center; justify-content: space-between; gap: 10px; }
+.wallet-row__ctrl { display:flex; align-items:center; gap: 10px; }
+.wallet-row__cnt { min-width: 30px; text-align:center; font-weight: 900; font-size: 1.15rem; }
+.stepbtn {
+  width: 42px; height: 42px; border:none; border-radius: 12px;
+  background: var(--line); color: var(--ink); font-size: 1.4rem; font-weight: 900; cursor: pointer;
+}
+.stepbtn:active { transform: scale(.92); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; }
 }

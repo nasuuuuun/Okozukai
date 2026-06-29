@@ -1,5 +1,5 @@
-/* app.js — 画面描画・操作・アニメーション
-   金額は内部ではすべて「セント単位の整数」で保持し、表示時に $X.XX に整形する。 */
+/* app.js — 画面描画・操作・アニメーション（バーチャル財布版）
+   金額は内部ではすべて「セント単位の整数」。残高は財布(state.wallet)の合計。 */
 (function (global) {
   "use strict";
 
@@ -7,8 +7,7 @@
   var L = global.OKLogic;
   var Snd = global.OKSound;
 
-  // 設定画面に入る前の計算ゲート。今は無効（子どもには触らせない運用のため）。
-  // 今後オンにしたい場合は true にするだけでよい。
+  // 設定画面に入る前の計算ゲート。今は無効（子どもには触らせない運用）。
   var GATE_ENABLED = false;
 
   var state = S.load();
@@ -17,23 +16,13 @@
   function $(sel) { return document.querySelector(sel); }
   function $all(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
 
-  // セント整数 → "1,234.50"（符号なし・数字部分のみ）
   function fmtAmt(cents) {
     cents = Math.round(Math.abs(cents));
-    var d = Math.floor(cents / 100);
-    var c = cents % 100;
-    return d.toLocaleString("en-US") + "." + String(c).padStart(2, "0");
+    return Math.floor(cents / 100).toLocaleString("en-US") + "." + String(cents % 100).padStart(2, "0");
   }
-  // 符号つき数字部分（残高表示など）："-1,234.50"
   function numPart(cents) { return (cents < 0 ? "-" : "") + fmtAmt(cents); }
-  // 通貨つきフル表記："$1,234.50" / "-$3.00"
   function money(cents) { return (cents < 0 ? "-" : "") + "$" + fmtAmt(cents); }
-  // 入力（ドル文字列）→ セント整数
-  function dollarsToCents(v) {
-    var f = parseFloat(v);
-    if (isNaN(f)) return 0;
-    return Math.round(f * 100);
-  }
+  function dollarsToCents(v) { var f = parseFloat(v); return isNaN(f) ? 0 : Math.round(f * 100); }
 
   function persist() { S.save(state); }
 
@@ -48,31 +37,26 @@
     el.textContent = msg;
     el.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { el.hidden = true; }, 2200);
+    toastTimer = setTimeout(function () { el.hidden = true; }, 2400);
   }
 
-  // ---------- 残高アニメーション ----------
+  // ---------- 残高アニメーション・演出 ----------
   function animateBalance(fromCents, toCents) {
     var el = $("#balance-value");
     var card = $("#balance-card");
-    var dur = 600;
-    var start = null;
+    var dur = 600, start = null;
     card.classList.remove("pulse-up", "pulse-down");
     void card.offsetWidth;
     card.classList.add(toCents >= fromCents ? "pulse-up" : "pulse-down");
-
     function step(ts) {
       if (start === null) start = ts;
       var p = Math.min((ts - start) / dur, 1);
-      var eased = 1 - Math.pow(1 - p, 3);
-      var val = Math.round(fromCents + (toCents - fromCents) * eased);
-      el.textContent = numPart(val);
-      if (p < 1) requestAnimationFrame(step);
-      else el.textContent = numPart(toCents);
+      var v = Math.round(fromCents + (toCents - fromCents) * (1 - Math.pow(1 - p, 3)));
+      el.textContent = numPart(v);
+      if (p < 1) requestAnimationFrame(step); else el.textContent = numPart(toCents);
     }
     requestAnimationFrame(step);
   }
-
   function spawnCoins(direction, count) {
     var layer = $("#coin-layer");
     for (var i = 0; i < (count || 6); i++) {
@@ -88,7 +72,6 @@
       })(i);
     }
   }
-
   function confetti() {
     var layer = $("#confetti");
     var emojis = ["🎉", "✨", "⭐", "🎊", "💖", "🪙"];
@@ -103,7 +86,7 @@
     }
   }
 
-  // ---------- 履歴描画 ----------
+  // ---------- 履歴 ----------
   function txMeta(tx) {
     if (tx.type === "spend") {
       var cat = L.categoryById(tx.category);
@@ -113,113 +96,70 @@
     if (tx.type === "add") return { icon: "🎁", label: "おこづかい", sign: "plus", amount: "+" + money(tx.amount), sub: tx.note || "ついか" };
     return { icon: "•", label: "", sign: "", amount: money(tx.amount), sub: "" };
   }
-
-  function fmtDate(iso) {
-    var d = new Date(iso);
-    return (d.getMonth() + 1) + "/" + d.getDate();
-  }
-
-  function historyItemHTML(tx, withDelete) {
+  function fmtDate(iso) { var d = new Date(iso); return (d.getMonth() + 1) + "/" + d.getDate(); }
+  function historyItemHTML(tx) {
     var m = txMeta(tx);
-    var subText = m.sub ? (fmtDate(tx.date) + " ・ " + m.sub) : fmtDate(tx.date);
+    var sub = m.sub ? (fmtDate(tx.date) + " ・ " + m.sub) : fmtDate(tx.date);
     return '<span class="hist-item__icon">' + m.icon + '</span>' +
-      '<span class="hist-item__body">' +
-        '<span class="hist-item__label">' + m.label + '</span>' +
-        '<span class="hist-item__sub">' + subText + '</span>' +
-      '</span>' +
-      '<span class="hist-item__amount ' + m.sign + '">' + m.amount + '</span>' +
-      (withDelete ? '<button class="hist-del" data-id="' + tx.id + '">削除</button>' : '');
+      '<span class="hist-item__body"><span class="hist-item__label">' + m.label + '</span>' +
+      '<span class="hist-item__sub">' + sub + '</span></span>' +
+      '<span class="hist-item__amount ' + m.sign + '">' + m.amount + '</span>';
   }
-
-  function renderHistoryMain() {
-    var ul = $("#history-list-main");
+  function renderHistoryInto(ul, limit, emptyMsg) {
     ul.innerHTML = "";
-    var items = state.transactions.slice(0, 6);
-    if (items.length === 0) { ul.innerHTML = '<li class="hist-empty">まだ きろくが ないよ</li>'; return; }
+    var items = state.transactions.slice(0, limit);
+    if (items.length === 0) { ul.innerHTML = '<li class="hist-empty">' + emptyMsg + '</li>'; return; }
     items.forEach(function (tx) {
       var li = document.createElement("li");
       li.className = "hist-item";
-      li.innerHTML = historyItemHTML(tx, false);
+      li.innerHTML = historyItemHTML(tx);
       ul.appendChild(li);
     });
   }
+  function renderHistoryMain() { renderHistoryInto($("#history-list-main"), 6, "まだ きろくが ないよ"); }
+  function renderHistoryAdmin() { renderHistoryInto($("#history-list-admin"), 50, "まだ記録がありません"); }
 
-  function renderHistoryAdmin() {
-    var ul = $("#history-list-admin");
-    ul.innerHTML = "";
-    if (state.transactions.length === 0) { ul.innerHTML = '<li class="hist-empty">まだ記録がありません</li>'; return; }
-    state.transactions.slice(0, 50).forEach(function (tx) {
-      var li = document.createElement("li");
-      li.className = "hist-item";
-      li.innerHTML = historyItemHTML(tx, true);
-      ul.appendChild(li);
-    });
-    $all("#history-list-admin .hist-del").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        if (!confirm("この記録を削除しますか？")) return;
-        L.removeTransaction(state, btn.getAttribute("data-id"));
-        persist();
-        renderMain();
-        renderHistoryAdmin();
-        toast("削除しました");
-      });
-    });
-  }
-
-  // ---------- 全体描画 ----------
+  // ---------- メイン ----------
   function renderMain() {
     $("#main-greeting").textContent = state.childName ? (state.childName + "の おこづかい") : "おこづかい";
     $("#balance-value").textContent = numPart(state.balance);
     renderHistoryMain();
     updateClaimButton();
   }
-
-  // お小遣いの日が来たら「おこづかいをもらう」ボタンを出す（自動では加算しない）
   function updateClaimButton() {
     var btn = $("#btn-claim");
-    if (!btn) return;
-    btn.hidden = (L.pendingCount(state, new Date()) <= 0);
+    if (btn) btn.hidden = (L.pendingCount(state, new Date()) <= 0);
   }
-
   function claimAllowance() {
     Snd.unlock();
     var before = state.balance;
     if (!L.claimOneAllowance(state, new Date())) { updateClaimButton(); return; }
     persist();
     renderMain();
-    Snd.cheer();
-    confetti();
-    spawnCoins("in", 8);
+    renderWalletEdit();
+    Snd.cheer(); confetti(); spawnCoins("in", 8);
     animateBalance(before, state.balance);
     toast("🎉 おこづかい " + money(state.allowance.amount) + " を もらったよ！");
   }
 
-  // ---------- つかうフロー（電卓方式：数字→ドル、小数点→セント） ----------
-  // entry は表示中の文字列（例 "0" "5" "5." "5.5" "5.50"）。セントに変換して確定する。
+  // ---------- つかう step1：ねだん入力＋カテゴリ ----------
   var spend = { entry: "0", category: null };
-
   function entryToCents(s) {
     if (!s) return 0;
     var parts = s.split(".");
     var dollars = parseInt(parts[0] || "0", 10) || 0;
-    var centsStr = (parts[1] || "").slice(0, 2);
-    while (centsStr.length < 2) centsStr += "0"; // "5"→"50", ""→"00"
-    var cents = parseInt(centsStr, 10) || 0;
-    return dollars * 100 + cents;
+    var c = (parts[1] || "").slice(0, 2);
+    while (c.length < 2) c += "0";
+    return dollars * 100 + (parseInt(c, 10) || 0);
   }
   function currentCents() { return entryToCents(spend.entry); }
-
   function resetSpend() {
     spend = { entry: "0", category: null };
     $("#spend-amount-value").textContent = "0";
     $all("#cat-grid .cat").forEach(function (c) { c.classList.remove("selected"); });
-    updateConfirm();
+    updateNext();
   }
-
-  function updateConfirm() {
-    $("#btn-spend-confirm").disabled = !(currentCents() > 0 && spend.category);
-  }
-
+  function updateNext() { $("#btn-spend-next").disabled = !(currentCents() > 0 && spend.category); }
   function buildCategoryGrid() {
     var grid = $("#cat-grid");
     grid.innerHTML = "";
@@ -233,35 +173,23 @@
         $all("#cat-grid .cat").forEach(function (c) { c.classList.remove("selected"); });
         b.classList.add("selected");
         spend.category = cat.id;
-        updateConfirm();
+        updateNext();
       });
       grid.appendChild(b);
     });
   }
-
-  // 数字＝ドル部分、小数点ボタン＝以後セント部分（最大2桁）
   function pressKey(k) {
     var e = spend.entry;
-    if (k === "del") {
-      e = e.length > 1 ? e.slice(0, -1) : "0";
-      if (e === "") e = "0";
-    } else if (k === ".") {
-      if (e.indexOf(".") === -1) e = e + ".";
-    } else { // 数字
-      if (e.indexOf(".") === -1) {
-        e = (e === "0") ? k : (e + k);
-        if (e.length > 5) return; // ドル部分は最大5桁（$99,999）
-      } else {
-        var parts = e.split(".");
-        if (parts[1].length >= 2) return; // セントは2桁まで
-        e = parts[0] + "." + parts[1] + k;
-      }
+    if (k === "del") { e = e.length > 1 ? e.slice(0, -1) : "0"; if (e === "") e = "0"; }
+    else if (k === ".") { if (e.indexOf(".") === -1) e = e + "."; }
+    else {
+      if (e.indexOf(".") === -1) { e = (e === "0") ? k : (e + k); if (e.length > 5) return; }
+      else { var p = e.split("."); if (p[1].length >= 2) return; e = p[0] + "." + p[1] + k; }
     }
     spend.entry = e;
     $("#spend-amount-value").textContent = e;
-    updateConfirm();
+    updateNext();
   }
-
   function bindKeypad() {
     $("#keypad").addEventListener("click", function (e) {
       var btn = e.target.closest(".key");
@@ -270,83 +198,156 @@
       pressKey(btn.getAttribute("data-key"));
     });
   }
-
-  function confirmSpend() {
-    var cents = currentCents();
-    if (cents <= 0 || !spend.category) return;
-    if (cents > state.balance) {
-      if (!confirm("おこづかいが たりないよ（のこり " + money(state.balance) + "）。それでも つかう？")) return;
-    }
-    var cat = L.categoryById(spend.category);
-    var before = state.balance;
-    L.addTransaction(state, { type: "spend", amount: cents, category: cat.id, icon: cat.icon });
-    persist();
-    showView("view-main");
-    renderMain();
-    Snd.spend();
-    spawnCoins("out", 7);
-    animateBalance(before, state.balance);
-    toast(cat.icon + " " + money(cents) + " つかったよ");
+  function goToPay() {
+    var price = L.roundTo5(currentCents());
+    if (price <= 0 || !spend.category) return;
+    if (price > state.balance) { alert("おこづかいが たりないよ（のこり " + money(state.balance) + "）"); return; }
+    payState = { price: price, coins: {} };
+    showView("view-pay");
+    renderPay();
   }
 
-  // ---------- 設定（保護者向け：金額入力はドル→セント変換） ----------
+  // ---------- つかう step2：財布のお金をタップして払う ----------
+  var payState = { price: 0, coins: {} };
+  function paidTotal() {
+    var t = 0;
+    L.DENOMS.forEach(function (d) { t += d * (payState.coins[d] || 0); });
+    return t;
+  }
+  function renderPay() {
+    $("#pay-price").textContent = money(payState.price);
+    var paid = paidTotal();
+    $("#pay-paid").textContent = money(paid);
+    var changeEl = $("#pay-change");
+    if (paid >= payState.price && payState.price > 0) {
+      var ch = paid - payState.price;
+      changeEl.hidden = false;
+      changeEl.textContent = ch > 0 ? ("おつり " + money(ch)) : "ぴったり！";
+      changeEl.className = "pay-change" + (ch > 0 ? " is-change" : " is-exact");
+    } else {
+      changeEl.hidden = true;
+    }
+    $("#btn-pay-confirm").disabled = !(paid >= payState.price);
+
+    var wrap = $("#wallet-pay");
+    wrap.innerHTML = "";
+    var any = false;
+    L.DENOMS.forEach(function (d) {
+      var owned = state.wallet[d] || 0;
+      if (owned <= 0) return;
+      any = true;
+      var avail = owned - (payState.coins[d] || 0);
+      var m = L.DENOM_META[d];
+      var btn = document.createElement("button");
+      btn.className = "money money--" + m.type + " denom-" + d + (avail <= 0 ? " is-empty" : "");
+      btn.disabled = avail <= 0;
+      btn.innerHTML = '<span class="money__val">' + m.label + '</span><span class="money__cnt">のこり ' + avail + '</span>';
+      btn.addEventListener("click", function () {
+        if ((state.wallet[d] || 0) - (payState.coins[d] || 0) <= 0) return;
+        payState.coins[d] = (payState.coins[d] || 0) + 1;
+        Snd.tap();
+        renderPay();
+      });
+      wrap.appendChild(btn);
+    });
+    if (!any) wrap.innerHTML = '<p class="hist-empty">おさいふが からっぽだよ</p>';
+  }
+  function clearPay() { payState.coins = {}; Snd.tap(); renderPay(); }
+  function confirmPay() {
+    var paid = paidTotal();
+    if (paid < payState.price) return;
+    var cat = L.categoryById(spend.category);
+    var before = state.balance;
+    var res = L.spend(state, payState.price, payState.coins, cat.id, cat.icon);
+    persist();
+    showView("view-main");
+    renderMain();
+    renderWalletEdit();
+    Snd.spend(); spawnCoins("out", 7);
+    animateBalance(before, state.balance);
+    var msg = cat.icon + " " + money(payState.price) + " つかったよ";
+    if (res.change > 0) msg += "／おつり " + money(res.change);
+    toast(msg);
+  }
+
+  // ---------- 設定：お小遣いを足す ----------
   function addMoney() {
-    var cents = dollarsToCents($("#add-amount").value);
+    var cents = L.roundTo5(dollarsToCents($("#add-amount").value));
     if (cents <= 0) { toast("金額を入力してください"); return; }
     var before = state.balance;
-    L.addTransaction(state, { type: "add", amount: cents, icon: "🎁", note: "ついか" });
+    L.deposit(state, cents, "add", { icon: "🎁", note: "ついか" });
     persist();
     $("#add-amount").value = "";
-    renderMain();
+    renderMain(); renderWalletEdit();
     showView("view-main");
-    Snd.cheer();
-    confetti();
-    spawnCoins("in", 7);
+    Snd.cheer(); confetti(); spawnCoins("in", 7);
     animateBalance(before, state.balance);
     toast("+" + money(cents) + " ふえたよ！");
   }
 
+  // ---------- 設定：おさいふの中身エディタ ----------
+  function renderWalletEdit() {
+    var wrap = $("#wallet-edit");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    L.DENOMS.forEach(function (d) {
+      var m = L.DENOM_META[d];
+      var row = document.createElement("div");
+      row.className = "wallet-row";
+      row.innerHTML =
+        '<span class="money money--' + m.type + ' money--sm denom-' + d + '"><span class="money__val">' + m.label + '</span></span>' +
+        '<div class="wallet-row__ctrl">' +
+          '<button class="stepbtn" data-d="' + d + '" data-op="-">−</button>' +
+          '<span class="wallet-row__cnt" id="wcnt-' + d + '">' + (state.wallet[d] || 0) + '</span>' +
+          '<button class="stepbtn" data-d="' + d + '" data-op="+">＋</button>' +
+        '</div>';
+      wrap.appendChild(row);
+    });
+    $all("#wallet-edit .stepbtn").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var d = parseInt(b.getAttribute("data-d"), 10);
+        var op = b.getAttribute("data-op");
+        state.wallet[d] = Math.max(0, (state.wallet[d] || 0) + (op === "+" ? 1 : -1));
+        L.syncBalance(state);
+        persist();
+        $("#wcnt-" + d).textContent = state.wallet[d];
+        renderMain();
+      });
+    });
+  }
+
+  // ---------- 設定：おこづかいの予定 ----------
   function saveAllowance() {
-    var cents = dollarsToCents($("#allow-amount").value || "0");
+    var cents = L.roundTo5(dollarsToCents($("#allow-amount").value || "0"));
     var interval = (document.querySelector('input[name="allow-interval"]:checked') || {}).value || "weekly";
-    var weekday = parseInt($("#allow-weekday").value, 10);
-    var monthday = parseInt($("#allow-monthday").value, 10);
-    L.setAllowance(state, { amount: cents, interval: interval, weekday: weekday, monthday: monthday });
+    L.setAllowance(state, { amount: cents, interval: interval, weekday: parseInt($("#allow-weekday").value, 10), monthday: parseInt($("#allow-monthday").value, 10) });
     persist();
     toast(cents > 0 ? "おこづかいの予定を保存しました" : "おこづかいの予定をオフにしました");
   }
-
-  // （テスト用）お小遣いの予定日が来た状態を再現する。基準日を1回分前に戻し、
-  // ちょうど1回分が未受取になるようにして「もらう」ボタンを出す。
   function simulateAllowanceDay() {
     var a = state.allowance;
     if (!a || a.amount <= 0) { toast("先に金額を設定して保存してください"); return; }
     var today = new Date(); today.setHours(0, 0, 0, 0);
-    var lastDue = new Date(today);
-    var guard = 0;
+    var lastDue = new Date(today), guard = 0;
     while (guard < 40) {
       if (a.interval === "weekly") { if (lastDue.getDay() === a.weekday) break; }
       else { if (lastDue.getDate() === Math.min(Math.max(a.monthday, 1), 28)) break; }
-      lastDue.setDate(lastDue.getDate() - 1);
-      guard++;
+      lastDue.setDate(lastDue.getDate() - 1); guard++;
     }
     var prev = new Date(lastDue);
-    if (a.interval === "weekly") prev.setDate(prev.getDate() - 7);
-    else prev.setMonth(prev.getMonth() - 1);
+    if (a.interval === "weekly") prev.setDate(prev.getDate() - 7); else prev.setMonth(prev.getMonth() - 1);
     a.lastGrantedDate = L.formatYMD(prev);
     persist();
     showView("view-main");
     renderMain();
     toast("（テスト）お小遣い日が来た状態にしました");
   }
-
   function saveName() {
     state.childName = ($("#child-name").value || "").trim();
     persist();
     renderMain();
     toast("保存しました");
   }
-
   function fillAllowanceForm() {
     var a = state.allowance;
     $("#allow-amount").value = a.amount ? (a.amount / 100) : "";
@@ -354,35 +355,29 @@
     $("#allow-weekday").value = String(a.weekday);
     var msel = $("#allow-monthday");
     if (!msel.options.length) {
-      for (var d = 1; d <= 28; d++) {
-        var o = document.createElement("option");
-        o.value = String(d); o.textContent = String(d);
-        msel.appendChild(o);
-      }
+      for (var d = 1; d <= 28; d++) { var o = document.createElement("option"); o.value = String(d); o.textContent = String(d); msel.appendChild(o); }
     }
     msel.value = String(a.monthday);
     toggleIntervalFields();
     $("#child-name").value = state.childName || "";
   }
-
   function toggleIntervalFields() {
     var weekly = (document.querySelector('input[name="allow-interval"]:checked') || {}).value !== "monthly";
     $("#weekday-wrap").hidden = !weekly;
     $("#monthday-wrap").hidden = weekly;
   }
 
-  // 設定画面を開く（中身を整えて表示）
   function enterAdult() {
     fillAllowanceForm();
+    renderWalletEdit();
     renderHistoryAdmin();
     showView("view-adult");
   }
 
-  // ---------- 設定ゲート（GATE_ENABLED が true のときのみ使用） ----------
+  // ---------- 設定ゲート（GATE_ENABLED が true のときのみ） ----------
   var gateAnswer = 0;
   function openGate() {
-    var a = 2 + Math.floor(Math.random() * 7);
-    var b = 2 + Math.floor(Math.random() * 7);
+    var a = 2 + Math.floor(Math.random() * 7), b = 2 + Math.floor(Math.random() * 7);
     gateAnswer = a + b;
     $("#gate-q").textContent = a + " ＋ " + b;
     $("#gate-input").value = "";
@@ -392,14 +387,8 @@
   }
   function closeGate() { $("#gate").hidden = true; }
   function checkGate() {
-    if (parseInt($("#gate-input").value, 10) === gateAnswer) {
-      closeGate();
-      enterAdult();
-    } else {
-      $("#gate-err").hidden = false;
-      $("#gate-input").value = "";
-      $("#gate-input").focus();
-    }
+    if (parseInt($("#gate-input").value, 10) === gateAnswer) { closeGate(); enterAdult(); }
+    else { $("#gate-err").hidden = false; $("#gate-input").value = ""; $("#gate-input").focus(); }
   }
 
   // ---------- バックアップ ----------
@@ -409,27 +398,27 @@
       .then(function (imported) {
         if (!confirm("現在のデータを、読み込んだ内容で置き換えます。よろしいですか？")) return;
         state = imported;
-        L.recompute(state);
+        L.migrateWalletFromTransactions(state);
+        L.syncBalance(state);
         persist();
-        renderMain();
-        fillAllowanceForm();
-        renderHistoryAdmin();
+        renderMain(); fillAllowanceForm(); renderWalletEdit(); renderHistoryAdmin();
         toast("復元しました");
       })
       .catch(function () { toast("ファイルを読み込めませんでした"); });
   }
 
-  // ---------- 初期化・イベント結線 ----------
+  // ---------- 初期化 ----------
   function bindEvents() {
     $("#btn-claim").addEventListener("click", claimAllowance);
     $("#btn-spend").addEventListener("click", function () { Snd.unlock(); resetSpend(); showView("view-spend"); });
     $("#btn-spend-back").addEventListener("click", function () { showView("view-main"); });
-    $("#btn-spend-confirm").addEventListener("click", confirmSpend);
+    $("#btn-spend-next").addEventListener("click", goToPay);
 
-    $("#btn-adult").addEventListener("click", function () {
-      Snd.unlock();
-      if (GATE_ENABLED) openGate(); else enterAdult();
-    });
+    $("#btn-pay-back").addEventListener("click", function () { showView("view-spend"); });
+    $("#btn-pay-clear").addEventListener("click", clearPay);
+    $("#btn-pay-confirm").addEventListener("click", confirmPay);
+
+    $("#btn-adult").addEventListener("click", function () { Snd.unlock(); if (GATE_ENABLED) openGate(); else enterAdult(); });
     $("#btn-adult-back").addEventListener("click", function () { showView("view-main"); });
 
     $("#gate-ok").addEventListener("click", checkGate);
@@ -440,9 +429,7 @@
     $("#btn-save-allowance").addEventListener("click", saveAllowance);
     $("#btn-test-due").addEventListener("click", simulateAllowanceDay);
     $("#btn-save-name").addEventListener("click", saveName);
-    $all('input[name="allow-interval"]').forEach(function (r) {
-      r.addEventListener("change", toggleIntervalFields);
-    });
+    $all('input[name="allow-interval"]').forEach(function (r) { r.addEventListener("change", toggleIntervalFields); });
 
     $("#btn-export").addEventListener("click", doExport);
     $("#btn-import").addEventListener("click", function () { $("#import-file").click(); });
@@ -458,17 +445,20 @@
     buildCategoryGrid();
     bindEvents();
 
-    if (L.ensureAllowanceBaseline(state, new Date())) persist();
+    var changed = false;
+    if (L.migrateWalletFromTransactions(state)) changed = true;
+    if (L.ensureAllowanceBaseline(state, new Date())) changed = true;
+    L.syncBalance(state);
+    if (changed) persist();
+
     renderMain();
+    renderWalletEdit();
 
     if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
       navigator.serviceWorker.register("sw.js").catch(function () {});
     }
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
 })(window);

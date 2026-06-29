@@ -6,10 +6,11 @@
 
   function defaultState() {
     return {
-      version: 1,
+      version: 2,
       childName: "",
       balance: 0,
-      advanceOwed: 0,
+      // バーチャル財布：お金の種類(セント)ごとの枚数。残高の正解はこれ。
+      wallet: { 1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0, 5: 0 },
       allowance: {
         amount: 0,
         interval: "weekly",
@@ -27,6 +28,7 @@
     if (!state || typeof state !== "object") return def;
     var s = Object.assign({}, def, state);
     s.allowance = Object.assign({}, def.allowance, state.allowance || {});
+    s.wallet = Object.assign({}, def.wallet, state.wallet || {});
     if (!Array.isArray(s.transactions)) s.transactions = [];
     return s;
   }

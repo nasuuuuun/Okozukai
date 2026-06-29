@@ -75,7 +75,31 @@
       <h2 class="section-label">なにに つかった？</h2>
       <div class="cat-grid" id="cat-grid"></div>
 
-      <button class="bigbtn bigbtn--confirm" id="btn-spend-confirm" disabled>けってい</button>
+      <button class="bigbtn bigbtn--confirm" id="btn-spend-next" disabled>つぎへ</button>
+    </section>
+
+    <!-- ===== はらうフロー（step2：財布のお金をタップして払う） ===== -->
+    <section id="view-pay" class="view">
+      <header class="topbar">
+        <button class="iconbtn" id="btn-pay-back" aria-label="もどる">←</button>
+        <h1 class="topbar__title">おかねを はらおう</h1>
+        <span class="iconbtn iconbtn--ghost"></span>
+      </header>
+
+      <div class="pay-summary">
+        <div class="pay-row"><span class="pay-label">ねだん</span><span class="pay-price" id="pay-price">$0.00</span></div>
+        <div class="pay-row"><span class="pay-label">はらった</span><span class="pay-paid" id="pay-paid">$0.00</span></div>
+        <div class="pay-change" id="pay-change" hidden></div>
+      </div>
+
+      <h2 class="section-label">おさいふ から タップしてね</h2>
+      <div class="wallet-pay" id="wallet-pay"></div>
+
+      <div class="btn-row pay-actions">
+        <button class="smallbtn smallbtn--ghost" id="btn-pay-clear">ぜんぶ もどす</button>
+      </div>
+
+      <button class="bigbtn bigbtn--confirm" id="btn-pay-confirm" disabled>けってい</button>
     </section>
 
     <!-- ===== 設定画面（保護者向け：通常の日本語） ===== -->
@@ -93,7 +117,13 @@
           <input type="number" inputmode="decimal" step="0.01" id="add-amount" placeholder="金額（例 5.00）" min="0" />
           <button class="smallbtn" id="btn-add-money">足す</button>
         </div>
-        <p class="panel__hint">臨時のおこづかい（お年玉・ごほうび など）を残高に追加します。</p>
+        <p class="panel__hint">臨時のおこづかい（お年玉・ごほうび など）を残高に追加します。金額は硬貨・紙幣に自動両替して財布に入ります。</p>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel__title">👛 おさいふの なかみ</h2>
+        <div class="wallet-edit" id="wallet-edit"></div>
+        <p class="panel__hint">いまの硬貨・紙幣の枚数です。最初のセットや、ずれた時の修正に使います（合計が残高になります）。</p>
       </div>
 
       <div class="panel">
