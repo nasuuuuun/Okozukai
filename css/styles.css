@@ -19,6 +19,9 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+/* hidden 属性を確実に効かせる（.inline-form の display:flex に負けないように） */
+[hidden] { display: none !important; }
+
 html, body {
   margin: 0;
   padding: 0;
@@ -94,7 +97,7 @@ html, body {
   line-height: 1.05;
   letter-spacing: -.01em;
 }
-.balance-amount .yen { font-size: .55em; vertical-align: .12em; margin-right: 2px; }
+.balance-amount .cur { font-size: .5em; vertical-align: .15em; margin-right: 3px; }
 
 .coin-layer { position: absolute; inset: 0; pointer-events: none; }
 .coin {
@@ -179,7 +182,7 @@ html, body {
   padding: 16px;
   box-shadow: var(--shadow);
 }
-.spend-amount .yen { color: var(--ink-soft); font-size: .6em; margin-right: 2px; }
+.spend-amount .cur { color: var(--ink-soft); font-size: .55em; margin-right: 3px; }
 
 /* ===== テンキー ===== */
 .keypad {
@@ -253,7 +256,7 @@ html, body {
 .advance-line strong { font-size: 1.3rem; color: var(--pink-dark); }
 
 .inline-form { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
-.inline-form .yen { font-weight: 800; color: var(--ink-soft); }
+.inline-form .cur { font-weight: 800; color: var(--ink-soft); }
 .inline-form input[type="number"],
 .inline-form input[type="text"] {
   flex: 1 1 120px; min-width: 0;

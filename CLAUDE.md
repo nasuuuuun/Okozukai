@@ -10,6 +10,7 @@
 
 ## データと保存
 - 保存先は **localStorage の 1 キー `okozukai_state`**（JSON）。サーバー・ログインなし。
+- **通貨はシンガポールドル（SGD）。金額はすべて「セント単位の整数」で保存・計算**し、表示時のみ `S$X.XX` に整形（`app.js` の `money()`/`fmtAmt()`/`numPart()`、入力は `dollarsToCents()`）。子ども画面のテンキーはレジ方式（押した数字がセントとして積み上がる）。
 - **残高 `balance` と立替残 `advanceOwed` は `transactions` から都度再計算する**のが原則
   （`OKLogic.recompute`）。トランザクションが唯一の正解。直接 balance を書き換えない。
 

@@ -1,5 +1,7 @@
-/* sw.js — オフラインでも開けるようにする最小のサービスワーカー */
-var CACHE = "okozukai-v1";
+/* sw.js — オフライン対応＋更新が自動で反映されるサービスワーカー
+   方針：ネット優先（online なら最新を取得しキャッシュ更新／offline ならキャッシュを使用）。
+   これにより、ホーム画面アイコンを入れ直さなくても、オンラインで開き直せば更新が反映される。 */
+var CACHE = "okozukai-v2";
 var ASSETS = [
   "./",
   "./index.html",
@@ -26,15 +28,18 @@ self.addEventListener("activate", function (e) {
   self.clients.claim();
 });
 
+// ネット優先。成功したらキャッシュも最新化。失敗（オフライン）したらキャッシュを返す。
 self.addEventListener("fetch", function (e) {
   if (e.request.method !== "GET") return;
   e.respondWith(
-    caches.match(e.request).then(function (hit) {
-      return hit || fetch(e.request).then(function (res) {
-        var copy = res.clone();
-        caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
-        return res;
-      }).catch(function () { return hit; });
+    fetch(e.request).then(function (res) {
+      var copy = res.clone();
+      caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
+      return res;
+    }).catch(function () {
+      return caches.match(e.request).then(function (hit) {
+        return hit || caches.match("./index.html");
+      });
     })
   );
 });
