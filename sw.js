@@ -1,7 +1,7 @@
 /* sw.js — オフライン対応＋更新が自動で反映されるサービスワーカー
    方針：ネット優先（online なら最新を取得しキャッシュ更新／offline ならキャッシュを使用）。
    これにより、ホーム画面アイコンを入れ直さなくても、オンラインで開き直せば更新が反映される。 */
-var CACHE = "okozukai-v3";
+var CACHE = "okozukai-v4";
 var ASSETS = [
   "./",
   "./index.html",
@@ -11,7 +11,15 @@ var ASSETS = [
   "./js/logic.js",
   "./js/app.js",
   "./manifest.json",
-  "./icon.svg"
+  "./icon.svg",
+  "./assets/money/note-10.svg",
+  "./assets/money/note-5.svg",
+  "./assets/money/note-2.svg",
+  "./assets/money/coin-100.svg",
+  "./assets/money/coin-50.svg",
+  "./assets/money/coin-20.svg",
+  "./assets/money/coin-10.svg",
+  "./assets/money/coin-5.svg"
 ];
 
 self.addEventListener("install", function (e) {
@@ -32,7 +40,7 @@ self.addEventListener("activate", function (e) {
 self.addEventListener("fetch", function (e) {
   if (e.request.method !== "GET") return;
   e.respondWith(
-    fetch(e.request).then(function (res) {
+    fetch(e.request, { cache: "no-store" }).then(function (res) {
       var copy = res.clone();
       caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
       return res;
