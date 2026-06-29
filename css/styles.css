@@ -394,13 +394,13 @@ html, body {
 .denom-1000 { background-image: url(../assets/money/note-10.jpeg); } /* $10 本物の紙幣写真 */
 .denom-500  { background-image: url(../assets/money/note-5.jpeg); }  /* $5 */
 .denom-200  { background-image: url(../assets/money/note-2.jpeg); }  /* $2 */
-/* 硬貨（円形・本物の硬貨写真をcoins.jpgから切り抜き） */
+/* 硬貨（円形・本物の硬貨写真 coin-*.jpg） */
 .money--coin { aspect-ratio: 1 / 1; min-width: 72px; border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,.2); }
-.denom-100 { background-image: url(../assets/money/coin-100.png); } /* $1 */
-.denom-50  { background-image: url(../assets/money/coin-50.png); }  /* 50¢ */
-.denom-20  { background-image: url(../assets/money/coin-20.png); }
-.denom-10  { background-image: url(../assets/money/coin-10.png); }
-.denom-5   { background-image: url(../assets/money/coin-5.png); }   /* 5¢ */
+.denom-100 { background-image: url(../assets/money/coin-100.jpg); } /* $1 */
+.denom-50  { background-image: url(../assets/money/coin-50.jpg); }  /* 50¢ */
+.denom-20  { background-image: url(../assets/money/coin-20.jpg); }
+.denom-10  { background-image: url(../assets/money/coin-10.jpg); }
+.denom-5   { background-image: url(../assets/money/coin-5.jpg); }   /* 5¢ */
 /* 額面テキストは画像内にあるため隠し、残数だけバッジ表示 */
 .money__val { display: none; }
 .money .money__cnt { align-self: center; margin-bottom: 5px; padding: 1px 8px;
@@ -408,10 +408,10 @@ html, body {
 
 /* 支払いパレット：のこっている枚数ぶんの実物（紙幣/硬貨）を並べる。
    min-height は付けない（aspect-ratio を保ち、背景画像の端が切れないように） */
-.wallet-pay { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-.wallet-pay .money--note { min-width: 88px; }
-.wallet-pay .money--coin { min-width: 50px; }
-.wallet-pay .is-stack { justify-content: center; min-width: 84px; }
+.wallet-pay { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.wallet-pay .money--note { min-width: 132px; }
+.wallet-pay .money--coin { min-width: 74px; }
+.wallet-pay .is-stack { justify-content: center; min-width: 100px; }
 .wallet-pay .is-stack .money__cnt { margin-bottom: 0; font-size: .64rem; white-space: nowrap; }
 
 /* 支払いサマリー */

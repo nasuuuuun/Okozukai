@@ -1,7 +1,7 @@
 /* sw.js — オフライン対応＋更新が自動で反映されるサービスワーカー
    方針：ネット優先（online なら最新を取得しキャッシュ更新／offline ならキャッシュを使用）。
    これにより、ホーム画面アイコンを入れ直さなくても、オンラインで開き直せば更新が反映される。 */
-var CACHE = "okozukai-v6";
+var CACHE = "okozukai-v7";
 var ASSETS = [
   "./",
   "./index.html",
@@ -16,11 +16,11 @@ var ASSETS = [
   "./assets/money/note-10.jpeg",
   "./assets/money/note-5.jpeg",
   "./assets/money/note-2.jpeg",
-  "./assets/money/coin-100.png",
-  "./assets/money/coin-50.png",
-  "./assets/money/coin-20.png",
-  "./assets/money/coin-10.png",
-  "./assets/money/coin-5.png"
+  "./assets/money/coin-100.jpg",
+  "./assets/money/coin-50.jpg",
+  "./assets/money/coin-20.jpg",
+  "./assets/money/coin-10.jpg",
+  "./assets/money/coin-5.jpg"
 ];
 
 self.addEventListener("install", function (e) {
