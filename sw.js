@@ -1,7 +1,7 @@
 /* sw.js — オフライン対応＋更新が自動で反映されるサービスワーカー
    方針：ネット優先（online なら最新を取得しキャッシュ更新／offline ならキャッシュを使用）。
    これにより、ホーム画面アイコンを入れ直さなくても、オンラインで開き直せば更新が反映される。 */
-var CACHE = "okozukai-v4";
+var CACHE = "okozukai-v5";
 var ASSETS = [
   "./",
   "./index.html",
@@ -12,9 +12,9 @@ var ASSETS = [
   "./js/app.js",
   "./manifest.json",
   "./icon.svg",
-  "./assets/money/note-10.svg",
-  "./assets/money/note-5.svg",
-  "./assets/money/note-2.svg",
+  "./assets/money/note-10.jpeg",
+  "./assets/money/note-5.jpeg",
+  "./assets/money/note-2.jpeg",
   "./assets/money/coin-100.svg",
   "./assets/money/coin-50.svg",
   "./assets/money/coin-20.svg",

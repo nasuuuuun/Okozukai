@@ -390,9 +390,9 @@ html, body {
 }
 /* 紙幣（横長） */
 .money--note { aspect-ratio: 2 / 1; min-width: 104px; border-radius: 10px; }
-.denom-1000 { background-image: url(../assets/money/note-10.svg); } /* $10 */
-.denom-500  { background-image: url(../assets/money/note-5.svg); }  /* $5 */
-.denom-200  { background-image: url(../assets/money/note-2.svg); }  /* $2 */
+.denom-1000 { background-image: url(../assets/money/note-10.jpeg); } /* $10 本物の紙幣写真 */
+.denom-500  { background-image: url(../assets/money/note-5.jpeg); }  /* $5 */
+.denom-200  { background-image: url(../assets/money/note-2.jpeg); }  /* $2 */
 /* 硬貨（円形） */
 .money--coin { aspect-ratio: 1 / 1; min-width: 72px; border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,.2); }
 .denom-100 { background-image: url(../assets/money/coin-100.svg); } /* $1 金 */
