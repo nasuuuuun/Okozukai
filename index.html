@@ -22,11 +22,21 @@
         <button class="iconbtn" id="btn-adult" aria-label="せってい">⚙️</button>
       </header>
 
-      <div class="balance-card" id="balance-card">
-        <div class="piggy">👛</div>
-        <div class="balance-label">いまの おこづかい</div>
-        <div class="balance-amount"><span class="cur">$</span><span id="balance-value">0.00</span></div>
-        <div class="coin-layer" id="coin-layer" aria-hidden="true"></div>
+      <div class="balance-card" id="balance-card" role="button" tabindex="0" aria-label="おさいふの中身をみる">
+        <div class="balance-card__inner" id="balance-card-inner">
+          <div class="balance-card__face balance-card__front">
+            <div class="piggy">👛</div>
+            <div class="balance-label">いまの おこづかい</div>
+            <div class="balance-amount"><span class="cur">$</span><span id="balance-value">0.00</span></div>
+            <div class="balance-peek-hint">👀 タップで おさいふを みる</div>
+            <div class="coin-layer" id="coin-layer" aria-hidden="true"></div>
+          </div>
+          <div class="balance-card__face balance-card__back">
+            <div class="balance-back-label">👛 おさいふ の なかみ</div>
+            <div class="wallet-view-tiles" id="wallet-view-tiles"></div>
+            <div class="balance-peek-hint">タップで もどる</div>
+          </div>
+        </div>
       </div>
 
       <button class="bigbtn bigbtn--claim" id="btn-claim" hidden>
@@ -121,7 +131,7 @@
       </div>
 
       <div class="panel">
-        <h2 class="panel__title">👛 おさいふの なかみ</h2>
+        <h2 class="panel__title">👛 財布の中身</h2>
         <p class="panel__hint" style="margin-top:0">硬貨・紙幣の枚数を直接いじれる画面です。合計がそのまま残高になるため、通常は触らず、最初のセットやズレの修正のときだけ使ってください。</p>
         <button class="smallbtn smallbtn--ghost" id="btn-open-wallet" style="margin-top:10px">おさいふの中身を修正する →</button>
       </div>

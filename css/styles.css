@@ -72,16 +72,36 @@ html, body {
 .iconbtn:active { transform: scale(.92); }
 .iconbtn--ghost { background: transparent; box-shadow: none; cursor: default; }
 
-/* ===== 残高カード ===== */
+/* ===== 残高カード（タップでフリップ→おさいふの中身） ===== */
 .balance-card {
   position: relative;
+  perspective: 1400px;
+  cursor: pointer;
+}
+.balance-card__inner {
+  position: relative;
+  width: 100%;
+  height: 0; /* JSで表示中の面の高さに合わせる */
+  transform-style: preserve-3d;
+}
+.balance-card__inner.is-animatable {
+  transition: transform .6s cubic-bezier(.3,.7,.3,1), height .45s ease;
+}
+.balance-card__inner.is-flipped { transform: rotateY(180deg); }
+.balance-card__face {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
   background: var(--card);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 26px 20px 30px;
-  text-align: center;
   overflow: hidden;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
+.balance-card__front { padding: 26px 20px 30px; text-align: center; }
+.balance-card__back { transform: rotateY(180deg); padding: 18px 16px 20px; text-align: center; }
+.balance-back-label { color: var(--ink-soft); font-weight: 800; margin-bottom: 12px; }
 .balance-card.pulse-up { animation: pop-up .5s ease; }
 .balance-card.pulse-down { animation: pop-down .5s ease; }
 @keyframes pop-up { 0%,100%{transform:none;} 35%{transform:scale(1.05);} }
@@ -98,6 +118,7 @@ html, body {
   letter-spacing: -.01em;
 }
 .balance-amount .cur { font-size: .5em; vertical-align: .15em; margin-right: 3px; }
+.balance-peek-hint { font-size: .72rem; color: var(--ink-soft); margin-top: 10px; opacity: .8; }
 
 .coin-layer { position: absolute; inset: 0; pointer-events: none; }
 .coin {
@@ -424,6 +445,14 @@ html, body {
 .pay-change.is-change { background:#fff6e0; color:#c98a00; }
 .pay-change.is-exact { background:#eafff5; color: var(--mint-dark); }
 .pay-actions { justify-content: center; margin: 12px 0 0; }
+
+/* おさいふの中身（カード裏面・閲覧専用。支払い画面と同じ実物イラストを枚数ぶん並べる） */
+.wallet-view-tiles { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; }
+.wallet-view-tiles .money--note { min-width: 92px; }
+.wallet-view-tiles .money--coin { min-width: 52px; }
+.wallet-view-tiles .money { cursor: default; }
+.wallet-view-tiles .money:active { transform: none; }
+.wallet-view-tiles .hist-empty { width: 100%; padding: 10px; }
 
 /* おさいふエディタ */
 .wallet-edit { display: flex; flex-direction: column; gap: 8px; }

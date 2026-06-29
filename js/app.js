@@ -127,14 +127,73 @@
       li.className = "hist-item";
       li.innerHTML = historyItemHTML(tx) + '<button class="hist-del" type="button" aria-label="削除">削除</button>';
       li.querySelector(".hist-del").addEventListener("click", function () {
-        if (!confirm("この記録を削除します。よろしいですか？\n（お金〔残高〕は変わりません。残高を直すときは「おさいふの中身を修正」を使ってください）")) return;
+        var msg = (tx.type === "spend")
+          ? "この買い物をキャンセルします。\n支払った紙幣・硬貨をおさいふに戻します（おつりは取り消します）。よろしいですか？"
+          : "この入金をキャンセルします。\n受け取った紙幣・硬貨をおさいふから取り消します。よろしいですか？";
+        if (!confirm(msg)) return;
+        L.reverseTransaction(state, tx);
         L.removeTransaction(state, tx.id);
         persist();
         renderHistoryAdmin();
         renderMain();
+        renderWalletEdit();
       });
       ul.appendChild(li);
     });
+  }
+
+  // ---------- おさいふの中身（カード裏面・閲覧のみ） ----------
+  // 支払い画面と同じく、同じ紙幣が2枚なら2枚とも実物イラストで並べる（×N表記は使わない）
+  function renderWalletView() {
+    var wrap = $("#wallet-view-tiles");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    var any = false;
+    L.DENOMS.forEach(function (d) {
+      var cnt = state.wallet[d] || 0;
+      if (cnt <= 0) return;
+      any = true;
+      var m = L.DENOM_META[d];
+      for (var i = 0; i < cnt; i++) {
+        var tile = document.createElement("span");
+        tile.className = "money money--" + m.type + " denom-" + d;
+        tile.setAttribute("aria-label", m.label);
+        wrap.appendChild(tile);
+      }
+    });
+    if (!any) wrap.innerHTML = '<p class="hist-empty">おさいふが からっぽだよ</p>';
+  }
+
+  // 残高カードのフリップ。表＝残高、裏＝おさいふの中身。
+  // 表示中の面の高さに合わせてカードの高さを変える（枚数が多いと裏面が伸びて「枠が広がる」演出になる）。
+  function cardEls() {
+    return { inner: $("#balance-card-inner"), front: $(".balance-card__front"), back: $(".balance-card__back") };
+  }
+  function cardSyncHeight() {
+    var e = cardEls();
+    if (!e.inner) return;
+    var face = e.inner.classList.contains("is-flipped") ? e.back : e.front;
+    if (face) e.inner.style.height = face.scrollHeight + "px";
+  }
+  function cardShowFront() {
+    var e = cardEls();
+    if (!e.inner) return;
+    e.inner.classList.remove("is-flipped");
+    if (e.front) e.inner.style.height = e.front.scrollHeight + "px";
+  }
+  function cardShowBack() {
+    var e = cardEls();
+    if (!e.inner || !e.back) return;
+    renderWalletView();
+    e.inner.style.height = e.back.scrollHeight + "px"; // 枚数ぶんに伸びる
+    e.inner.classList.add("is-flipped");
+  }
+  function toggleWalletFlip() {
+    var e = cardEls();
+    if (!e.inner) return;
+    Snd.tap();
+    if (e.inner.classList.contains("is-flipped")) cardShowFront();
+    else cardShowBack();
   }
 
   // ---------- メイン ----------
@@ -143,6 +202,7 @@
     $("#balance-value").textContent = numPart(state.balance);
     renderHistoryMain();
     updateClaimButton();
+    cardShowFront();
   }
   function updateClaimButton() {
     var btn = $("#btn-claim");
@@ -440,6 +500,8 @@
   // ---------- 初期化 ----------
   function bindEvents() {
     $("#btn-claim").addEventListener("click", claimAllowance);
+    $("#balance-card").addEventListener("click", toggleWalletFlip);
+    $("#balance-card").addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleWalletFlip(); } });
     $("#btn-spend").addEventListener("click", function () { Snd.unlock(); resetSpend(); showView("view-spend"); });
     $("#btn-spend-back").addEventListener("click", function () { showView("view-main"); });
     $("#btn-spend-next").addEventListener("click", goToPay);
@@ -485,6 +547,13 @@
 
     renderMain();
     renderWalletEdit();
+
+    // 初回は高さを即設定し、その後にトランジションを有効化（読み込み時に伸び縮みしないように）
+    requestAnimationFrame(function () {
+      var inner = $("#balance-card-inner");
+      if (inner) inner.classList.add("is-animatable");
+    });
+    window.addEventListener("resize", cardSyncHeight);
 
     if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
       navigator.serviceWorker.register("sw.js").catch(function () {});

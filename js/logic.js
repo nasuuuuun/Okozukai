@@ -70,7 +70,9 @@
       amount: Math.round(Math.abs(t.amount)),
       category: t.category || null,
       icon: t.icon || null,
-      note: t.note || ""
+      note: t.note || "",
+      coins: t.coins || null,      // この取引で動いた硬貨・紙幣の内訳（入金=入った枚数 / 支払=払った枚数）
+      change: Math.round(t.change || 0) // 支払い時のおつり（セント）。逆戻しでこの分の硬貨を取り消す
     };
   }
   function addTransaction(state, t) { var tx = makeTx(t); state.transactions.unshift(tx); return tx; }
@@ -81,12 +83,47 @@
   // 残高を財布から同期
   function syncBalance(state) { state.balance = walletBalance(state.wallet); return state.balance; }
 
+  // 財布から金額を差し引く（残高リセット＋再両替方式）
+  function walletSub(w, cents) {
+    var cur = walletBalance(w);
+    if (cur < cents) return false;
+    var remaining = roundTo5(cur - cents);
+    DENOMS.forEach(function (d) { w[d] = 0; });
+    if (remaining > 0) walletAdd(w, remaining);
+    return true;
+  }
+
+  // 取引を逆戻しして財布を更新（履歴削除＝取引キャンセルの際に使う）
+  // coins が記録されていれば、その取引で実際に動いた硬貨・紙幣をそのまま戻す/取り消す。
+  // 古いデータ（coins なし）は金額ベースの貪欲法でフォールバック。
+  function reverseTransaction(state, tx) {
+    if (tx.type === "spend") {
+      if (tx.coins) {
+        // 払った硬貨・紙幣をおさいふに戻す
+        DENOMS.forEach(function (d) { state.wallet[d] = (state.wallet[d] || 0) + (tx.coins[d] || 0); });
+        // 受け取ったおつりの硬貨は取り消す（足りなければ0で止める）
+        var ch = denomsBreakdown(tx.change || 0);
+        DENOMS.forEach(function (d) { state.wallet[d] = Math.max(0, (state.wallet[d] || 0) - (ch[d] || 0)); });
+      } else {
+        walletAdd(state.wallet, tx.amount);
+      }
+    } else if (tx.type === "add" || tx.type === "allowance") {
+      if (tx.coins) {
+        // 入金で入った硬貨・紙幣を取り消す（足りなければ0で止める）
+        DENOMS.forEach(function (d) { state.wallet[d] = Math.max(0, (state.wallet[d] || 0) - (tx.coins[d] || 0)); });
+      } else {
+        walletSub(state.wallet, tx.amount);
+      }
+    }
+    syncBalance(state);
+  }
+
   // ---- 入金（足す・おこづかい受取）：金額を両替して財布へ＋履歴 ----
   function deposit(state, cents, type, meta) {
     cents = roundTo5(cents);
     if (cents <= 0) return null;
-    walletAdd(state.wallet, cents);
-    var tx = addTransaction(state, { type: type, amount: cents, icon: meta && meta.icon, note: (meta && meta.note) || "" });
+    var added = walletAdd(state.wallet, cents); // 入った硬貨・紙幣の内訳
+    var tx = addTransaction(state, { type: type, amount: cents, icon: meta && meta.icon, note: (meta && meta.note) || "", coins: added });
     syncBalance(state);
     return tx;
   }
@@ -95,14 +132,16 @@
   function spend(state, priceCents, payCoins, catId, icon) {
     priceCents = roundTo5(priceCents);
     var paid = 0;
+    var used = {};
     DENOMS.forEach(function (d) {
       var n = payCoins[d] || 0;
+      if (n > 0) used[d] = n; // 実際に払った硬貨・紙幣を記録
       state.wallet[d] = Math.max(0, (state.wallet[d] || 0) - n);
       paid += d * n;
     });
     var change = paid - priceCents;
     if (change > 0) walletAdd(state.wallet, change);
-    addTransaction(state, { type: "spend", amount: priceCents, category: catId, icon: icon });
+    addTransaction(state, { type: "spend", amount: priceCents, category: catId, icon: icon, coins: used, change: change });
     syncBalance(state);
     return { change: change };
   }
@@ -181,8 +220,10 @@
     CATEGORIES: CATEGORIES, categoryById: categoryById,
     DENOMS: DENOMS, DENOM_META: DENOM_META, emptyWallet: emptyWallet,
     roundTo5: roundTo5, walletBalance: walletBalance, denomsBreakdown: denomsBreakdown, walletAdd: walletAdd,
+    walletSub: walletSub,
     makeTx: makeTx, addTransaction: addTransaction, removeTransaction: removeTransaction,
     syncBalance: syncBalance, deposit: deposit, spend: spend,
+    reverseTransaction: reverseTransaction,
     countGrants: countGrants, pendingCount: pendingCount, claimOneAllowance: claimOneAllowance,
     ensureAllowanceBaseline: ensureAllowanceBaseline, setAllowance: setAllowance,
     migrateWalletFromTransactions: migrateWalletFromTransactions,
