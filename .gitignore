@@ -1,0 +1,11 @@
+# OS が作る不要ファイル
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# エディタ/ローカル設定・開発補助（公開不要）
+.claude/
+.vscode/
+
+# このアプリから書き出したバックアップ（個人データ）
+okozukai-backup-*.json

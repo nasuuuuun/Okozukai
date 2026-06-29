@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#ff8fab" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>おこづかいちょう</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ===== メイン（子ども画面） ===== -->
+    <section id="view-main" class="view is-active">
+      <header class="topbar">
+        <h1 class="topbar__title" id="main-greeting">おこづかい</h1>
+        <button class="iconbtn" id="btn-adult" aria-label="おとなメニュー">⚙️</button>
+      </header>
+
+      <div class="balance-card" id="balance-card">
+        <div class="piggy">🐷</div>
+        <div class="balance-label">いまの おこづかい</div>
+        <div class="balance-amount"><span class="yen">¥</span><span id="balance-value">0</span></div>
+        <div class="coin-layer" id="coin-layer" aria-hidden="true"></div>
+      </div>
+
+      <button class="bigbtn bigbtn--spend" id="btn-spend">
+        <span class="bigbtn__icon">🛍️</span>
+        <span class="bigbtn__text">つかう</span>
+      </button>
+
+      <div class="history">
+        <h2 class="history__title">さいきん つかったもの</h2>
+        <ul class="history__list" id="history-list-main"></ul>
+      </div>
+    </section>
+
+    <!-- ===== つかうフロー ===== -->
+    <section id="view-spend" class="view">
+      <header class="topbar">
+        <button class="iconbtn" id="btn-spend-back" aria-label="もどる">←</button>
+        <h1 class="topbar__title">なにを つかう？</h1>
+        <span class="iconbtn iconbtn--ghost"></span>
+      </header>
+
+      <div class="spend-amount">
+        <span class="yen">¥</span><span id="spend-amount-value">0</span>
+      </div>
+
+      <div class="keypad" id="keypad">
+        <button class="key" data-key="1">1</button>
+        <button class="key" data-key="2">2</button>
+        <button class="key" data-key="3">3</button>
+        <button class="key" data-key="4">4</button>
+        <button class="key" data-key="5">5</button>
+        <button class="key" data-key="6">6</button>
+        <button class="key" data-key="7">7</button>
+        <button class="key" data-key="8">8</button>
+        <button class="key" data-key="9">9</button>
+        <button class="key key--wide" data-key="00">00</button>
+        <button class="key" data-key="0">0</button>
+        <button class="key key--del" data-key="del">⌫</button>
+      </div>
+
+      <h2 class="section-label">なにに つかった？</h2>
+      <div class="cat-grid" id="cat-grid"></div>
+
+      <h2 class="section-label">どうやって はらう？</h2>
+      <div class="method-row">
+        <button class="method" data-method="cash">
+          <span class="method__icon">💰</span>
+          <span class="method__text">げんきん</span>
+        </button>
+        <button class="method" data-method="card">
+          <span class="method__icon">💳</span>
+          <span class="method__text">カード<small>（おうちのひと）</small></span>
+        </button>
+      </div>
+
+      <button class="bigbtn bigbtn--confirm" id="btn-spend-confirm" disabled>けってい</button>
+    </section>
+
+    <!-- ===== おとなメニュー ===== -->
+    <section id="view-adult" class="view">
+      <header class="topbar">
+        <button class="iconbtn" id="btn-adult-back" aria-label="もどる">←</button>
+        <h1 class="topbar__title">おとなメニュー</h1>
+        <span class="iconbtn iconbtn--ghost"></span>
+      </header>
+
+      <div class="panel">
+        <h2 class="panel__title">💴 おこづかいを たす</h2>
+        <div class="inline-form">
+          <span class="yen">¥</span>
+          <input type="number" inputmode="numeric" id="add-amount" placeholder="きんがく" min="1" />
+          <button class="smallbtn" id="btn-add-money">たす</button>
+        </div>
+        <p class="panel__hint">おとしだま・ごほうびなど、げんきんで わたした ぶんを たします。</p>
+      </div>
+
+      <div class="panel panel--advance">
+        <h2 class="panel__title">🧮 たてかえ トラッカー</h2>
+        <p class="advance-line">
+          子が おうちのひとに かえす げんきん：
+          <strong id="advance-value">¥0</strong>
+        </p>
+        <div class="inline-form">
+          <span class="yen">¥</span>
+          <input type="number" inputmode="numeric" id="collect-amount" placeholder="かいしゅうした きんがく" min="1" />
+          <button class="smallbtn" id="btn-collect">かいしゅう</button>
+        </div>
+        <p class="panel__hint">
+          カードで たてかえた ぶんが ここに たまります。すきな ときに キリのいい きんがくで
+          げんきんを うけとって、その がくを にゅうりょくしてください。ざんだかは かわりません。
+        </p>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel__title">🗓️ じどう おこづかい</h2>
+        <div class="inline-form">
+          <span class="yen">¥</span>
+          <input type="number" inputmode="numeric" id="allow-amount" placeholder="1かいの きんがく" min="0" />
+        </div>
+        <div class="radio-row">
+          <label><input type="radio" name="allow-interval" value="weekly" /> まいしゅう</label>
+          <label><input type="radio" name="allow-interval" value="monthly" /> まいつき</label>
+        </div>
+        <div class="inline-form" id="weekday-wrap">
+          <label for="allow-weekday">ようび：</label>
+          <select id="allow-weekday">
+            <option value="0">にちようび</option>
+            <option value="1">げつようび</option>
+            <option value="2">かようび</option>
+            <option value="3">すいようび</option>
+            <option value="4">もくようび</option>
+            <option value="5">きんようび</option>
+            <option value="6">どようび</option>
+          </select>
+        </div>
+        <div class="inline-form" id="monthday-wrap" hidden>
+          <label for="allow-monthday">まいつき：</label>
+          <select id="allow-monthday"></select>
+          <span>にち</span>
+        </div>
+        <button class="smallbtn" id="btn-save-allowance">ほぞん</button>
+        <p class="panel__hint">アプリを ひらいた ときに、よていびを すぎていれば じどうで おこづかいが はいります。</p>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel__title">🙋 なまえ</h2>
+        <div class="inline-form">
+          <input type="text" id="child-name" placeholder="おなまえ" maxlength="12" />
+          <button class="smallbtn" id="btn-save-name">ほぞん</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel__title">📜 りれきの ていせい</h2>
+        <ul class="history__list history__list--admin" id="history-list-admin"></ul>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel__title">💾 バックアップ</h2>
+        <div class="btn-row">
+          <button class="smallbtn" id="btn-export">かきだし（ほぞん）</button>
+          <button class="smallbtn smallbtn--ghost" id="btn-import">よみこみ（ふくげん）</button>
+          <input type="file" id="import-file" accept="application/json" hidden />
+        </div>
+        <p class="panel__hint">この たんまつの なかに データが ほぞんされます。きしゅへんこうの まえなどに かきだして おくと あんしんです。</p>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ===== おとなゲート モーダル ===== -->
+  <div id="gate" class="modal" hidden>
+    <div class="modal__box">
+      <p class="modal__title">おとなの かた だけ</p>
+      <p class="modal__q"><span id="gate-q"></span> ＝ ？</p>
+      <input type="number" inputmode="numeric" id="gate-input" />
+      <div class="btn-row">
+        <button class="smallbtn smallbtn--ghost" id="gate-cancel">やめる</button>
+        <button class="smallbtn" id="gate-ok">OK</button>
+      </div>
+      <p class="modal__err" id="gate-err" hidden>ちがうみたい。もういちど！</p>
+    </div>
+  </div>
+
+  <!-- ===== トースト ===== -->
+  <div id="toast" class="toast" hidden></div>
+
+  <!-- ===== 紙吹雪レイヤー ===== -->
+  <div id="confetti" class="confetti" aria-hidden="true"></div>
+
+  <script src="js/sound.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/logic.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
