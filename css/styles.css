@@ -302,6 +302,10 @@ html, body {
   font-family: inherit;
 }
 .inline-form input:focus, .gate input:focus { outline: 2px solid var(--pink); border-color: var(--pink); }
+/* 金額は5¢単位に丸めるので、1単位ずつ動く数字スピナー（上下矢印）は不要なので隠す */
+.inline-form input[type="number"]::-webkit-outer-spin-button,
+.inline-form input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.inline-form input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .inline-form select {
   border: 2px solid var(--line);
   border-radius: 12px;
@@ -312,6 +316,10 @@ html, body {
 }
 .radio-row { display: flex; gap: 18px; margin: 4px 0 10px; font-weight: 700; }
 .radio-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+/* 保存できたことをその場で示すインライン表示 */
+.save-flash { margin: 8px 0 0; color: var(--mint-dark); font-weight: 800; font-size: .95rem; animation: flash-in .25s ease; }
+@keyframes flash-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 
 .smallbtn {
   border: none;

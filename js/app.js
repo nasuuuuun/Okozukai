@@ -484,11 +484,20 @@
     renderMain();
     toast("（テスト）お小遣い日が来た状態にしました");
   }
+  var nameSavedTimer = null;
   function saveName() {
     state.childName = ($("#child-name").value || "").trim();
     persist();
     renderMain();
-    toast("保存しました");
+    var input = $("#child-name");
+    if (input) input.blur(); // スマホのキーボードを下げて確認表示を見えやすくする
+    var f = $("#name-saved");
+    if (f) {
+      f.hidden = false;
+      clearTimeout(nameSavedTimer);
+      nameSavedTimer = setTimeout(function () { f.hidden = true; }, 2400);
+    }
+    toast("名前を保存しました");
   }
   function fillAllowanceForm() {
     var a = state.allowance;
