@@ -18,6 +18,8 @@
         monthday: 1,
         lastGrantedDate: null
       },
+      // ユーザーが追加した費目（つかいみち）。{ id, icon, label }
+      categories: [],
       transactions: []
     };
   }
@@ -30,6 +32,7 @@
     s.allowance = Object.assign({}, def.allowance, state.allowance || {});
     s.wallet = Object.assign({}, def.wallet, state.wallet || {});
     if (!Array.isArray(s.transactions)) s.transactions = [];
+    if (!Array.isArray(s.categories)) s.categories = [];
     return s;
   }
 

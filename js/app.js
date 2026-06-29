@@ -15,6 +15,11 @@
   // ---------- ユーティリティ ----------
   function $(sel) { return document.querySelector(sel); }
   function $all(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
 
   function fmtAmt(cents) {
     cents = Math.round(Math.abs(cents));
@@ -89,8 +94,9 @@
   // ---------- 履歴 ----------
   function txMeta(tx) {
     if (tx.type === "spend") {
-      var cat = L.categoryById(tx.category);
-      return { icon: cat.icon, label: cat.label, sign: "minus", amount: "-" + money(tx.amount), sub: "" };
+      var cat = L.categoryById(tx.category, state);
+      // 履歴に焼き込んだ費目名・アイコンを優先（費目が後で消されても壊れない）
+      return { icon: tx.icon || cat.icon, label: tx.catLabel || cat.label, sign: "minus", amount: "-" + money(tx.amount), sub: "" };
     }
     if (tx.type === "allowance") return { icon: "🗓️", label: "おこづかい", sign: "plus", amount: "+" + money(tx.amount), sub: "じどう" };
     if (tx.type === "add") return { icon: "🎁", label: "おこづかい", sign: "plus", amount: "+" + money(tx.amount), sub: tx.note || "ついか" };
@@ -101,8 +107,8 @@
     var m = txMeta(tx);
     var sub = m.sub ? (fmtDate(tx.date) + " ・ " + m.sub) : fmtDate(tx.date);
     return '<span class="hist-item__icon">' + m.icon + '</span>' +
-      '<span class="hist-item__body"><span class="hist-item__label">' + m.label + '</span>' +
-      '<span class="hist-item__sub">' + sub + '</span></span>' +
+      '<span class="hist-item__body"><span class="hist-item__label">' + esc(m.label) + '</span>' +
+      '<span class="hist-item__sub">' + esc(sub) + '</span></span>' +
       '<span class="hist-item__amount ' + m.sign + '">' + m.amount + '</span>';
   }
   function renderHistoryInto(ul, limit, emptyMsg) {
@@ -241,11 +247,11 @@
   function buildCategoryGrid() {
     var grid = $("#cat-grid");
     grid.innerHTML = "";
-    L.CATEGORIES.forEach(function (cat) {
+    L.allCategories(state).forEach(function (cat) {
       var b = document.createElement("button");
       b.className = "cat";
       b.setAttribute("data-cat", cat.id);
-      b.innerHTML = '<div class="cat__icon">' + cat.icon + '</div><div class="cat__label">' + cat.label + '</div>';
+      b.innerHTML = '<div class="cat__icon">' + cat.icon + '</div><div class="cat__label">' + esc(cat.label) + '</div>';
       b.addEventListener("click", function () {
         Snd.tap();
         $all("#cat-grid .cat").forEach(function (c) { c.classList.remove("selected"); });
@@ -292,63 +298,109 @@
     L.DENOMS.forEach(function (d) { t += d * (payState.coins[d] || 0); });
     return t;
   }
+  var STACK_MAX = 12; // これを超える枚数は、実物を並べず1枚＋枚数バッジにまとめる
   function renderPay() {
     $("#pay-price").textContent = money(payState.price);
-    var paid = paidTotal();
-    $("#pay-paid").textContent = money(paid);
+    var staged = paidTotal();
+    $("#pay-paid").textContent = money(staged);
     var changeEl = $("#pay-change");
-    if (paid >= payState.price && payState.price > 0) {
-      var ch = paid - payState.price;
+    if (staged >= payState.price && payState.price > 0) {
+      var ch = staged - payState.price;
       changeEl.hidden = false;
       changeEl.textContent = ch > 0 ? ("おつり " + money(ch)) : "ぴったり！";
       changeEl.className = "pay-change" + (ch > 0 ? " is-change" : " is-exact");
     } else {
       changeEl.hidden = true;
     }
-    $("#btn-pay-confirm").disabled = !(paid >= payState.price);
-
-    var wrap = $("#wallet-pay");
+    $("#btn-pay-confirm").disabled = !(staged >= payState.price);
+    renderPayZone($("#pay-tray"), "tray");
+    renderPayZone($("#wallet-pay"), "wallet");
+  }
+  // tray＝だすお金（payState.coins）/ wallet＝のこりの手持ち（財布−だした分）
+  function renderPayZone(wrap, zone) {
     wrap.innerHTML = "";
     var any = false;
-    var STACK_MAX = 12; // これを超える枚数は、実物を並べず1枚＋「のこりN」にする
     L.DENOMS.forEach(function (d) {
-      var owned = state.wallet[d] || 0;
-      if (owned <= 0) return;
+      var count = (zone === "tray")
+        ? (payState.coins[d] || 0)
+        : ((state.wallet[d] || 0) - (payState.coins[d] || 0));
+      if (count <= 0) return;
       any = true;
-      var avail = owned - (payState.coins[d] || 0);
-      if (avail <= 0) return; // 全部はらい終えた種類は出さない
       var m = L.DENOM_META[d];
-      if (avail > STACK_MAX) {
-        var stack = makePayTile(d, m);
+      if (count > STACK_MAX) {
+        var stack = makePayTile(d, m, zone);
         stack.classList.add("is-stack");
-        stack.innerHTML = '<span class="money__cnt">のこり ' + avail + '</span>';
+        stack.innerHTML = '<span class="money__cnt">' + (zone === "tray" ? "" : "のこり ") + count + '</span>';
         wrap.appendChild(stack);
       } else {
-        for (var i = 0; i < avail; i++) wrap.appendChild(makePayTile(d, m));
+        for (var i = 0; i < count; i++) wrap.appendChild(makePayTile(d, m, zone));
       }
     });
-    if (!any) wrap.innerHTML = '<p class="hist-empty">おさいふが からっぽだよ</p>';
+    if (!any) {
+      wrap.innerHTML = (zone === "tray")
+        ? '<p class="pay-tray__empty">ここに だす おかねが ならぶよ</p>'
+        : '<p class="hist-empty">ぜんぶ だしたよ</p>';
+    }
   }
-  // 支払いパレットの1枚（硬貨/紙幣の実物イラスト）。タップで1枚はらう。
-  function makePayTile(d, m) {
+  // 実物イラスト1枚。wallet ならタップでトレイへ、tray ならタップでおさいふへ。
+  function makePayTile(d, m, zone) {
     var btn = document.createElement("button");
     btn.className = "money money--" + m.type + " denom-" + d + " paytile";
     btn.setAttribute("aria-label", m.label);
-    btn.addEventListener("click", function () {
+    btn.addEventListener("click", function () { movePayCoin(d, zone, btn); });
+    return btn;
+  }
+  function movePayCoin(d, fromZone, srcEl) {
+    if (fromZone === "wallet") {
       if ((state.wallet[d] || 0) - (payState.coins[d] || 0) <= 0) return;
       payState.coins[d] = (payState.coins[d] || 0) + 1;
-      Snd.tap();
-      renderPay();
+    } else {
+      if ((payState.coins[d] || 0) <= 0) return;
+      payState.coins[d] = payState.coins[d] - 1;
+    }
+    Snd.tap();
+    var srcRect = srcEl.getBoundingClientRect();
+    renderPay();
+    var destWrap = (fromZone === "wallet") ? $("#pay-tray") : $("#wallet-pay");
+    var dests = destWrap.querySelectorAll(".denom-" + d);
+    var destEl = dests.length ? dests[dests.length - 1] : null;
+    if (destEl) flyTile(srcRect, destEl);
+  }
+  // タップした位置から移動先へ実物がスッとスライドする演出（FLIP）
+  function flyTile(srcRect, destEl) {
+    var destRect = destEl.getBoundingClientRect();
+    if (!destRect.width || !srcRect.width) return;
+    destEl.style.visibility = "hidden";
+    var clone = destEl.cloneNode(true);
+    clone.style.visibility = "visible";
+    clone.style.position = "fixed";
+    clone.style.left = srcRect.left + "px";
+    clone.style.top = srcRect.top + "px";
+    clone.style.width = srcRect.width + "px";
+    clone.style.height = srcRect.height + "px";
+    clone.style.margin = "0";
+    clone.style.zIndex = "80";
+    clone.style.pointerEvents = "none";
+    clone.style.transition = "transform .3s cubic-bezier(.35,1.15,.4,1)";
+    document.body.appendChild(clone);
+    var dx = destRect.left - srcRect.left;
+    var dy = destRect.top - srcRect.top;
+    var sx = (destRect.width / srcRect.width) || 1;
+    var sy = (destRect.height / srcRect.height) || 1;
+    requestAnimationFrame(function () {
+      clone.style.transform = "translate(" + dx + "px," + dy + "px) scale(" + sx + "," + sy + ")";
     });
-    return btn;
+    var done = function () { if (clone.parentNode) clone.remove(); destEl.style.visibility = ""; };
+    clone.addEventListener("transitionend", done, { once: true });
+    setTimeout(done, 380);
   }
   function clearPay() { payState.coins = {}; Snd.tap(); renderPay(); }
   function confirmPay() {
     var paid = paidTotal();
     if (paid < payState.price) return;
-    var cat = L.categoryById(spend.category);
+    var cat = L.categoryById(spend.category, state);
     var before = state.balance;
-    var res = L.spend(state, payState.price, payState.coins, cat.id, cat.icon);
+    var res = L.spend(state, payState.price, payState.coins, cat.id, cat.icon, cat.label);
     persist();
     showView("view-main");
     renderMain();
@@ -457,10 +509,62 @@
     $("#monthday-wrap").hidden = weekly;
   }
 
+  // ---------- 設定：費目（つかいみち）の追加 ----------
+  var EMOJI_CHOICES = ["🍬","🍦","🍩","🍪","🧁","🍫","🥤","🍿","🧸","🎮","🎰","🎠","🚗","🚌","✏️","📖","🎨","⚽","🪀","🎈","🎁","🐶","🐱","🌸"];
+  var selectedEmoji = EMOJI_CHOICES[0];
+  function buildEmojiPicker() {
+    var wrap = $("#emoji-picker");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    EMOJI_CHOICES.forEach(function (e) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "emoji-opt" + (e === selectedEmoji ? " selected" : "");
+      b.textContent = e;
+      b.addEventListener("click", function () {
+        selectedEmoji = e;
+        $all("#emoji-picker .emoji-opt").forEach(function (x) { x.classList.remove("selected"); });
+        b.classList.add("selected");
+      });
+      wrap.appendChild(b);
+    });
+  }
+  function renderCatAdmin() {
+    var ul = $("#cat-admin-list");
+    if (!ul) return;
+    ul.innerHTML = "";
+    var custom = state.categories || [];
+    if (!custom.length) { ul.innerHTML = '<li class="hist-empty">追加した費目はありません</li>'; return; }
+    custom.forEach(function (c) {
+      var li = document.createElement("li");
+      li.className = "cat-admin-item";
+      li.innerHTML = '<span class="cat-admin-icon">' + c.icon + '</span>' +
+        '<span class="cat-admin-label">' + esc(c.label) + '</span>' +
+        '<button class="hist-del" type="button">削除</button>';
+      li.querySelector(".hist-del").addEventListener("click", function () {
+        if (!confirm("「" + c.label + "」を費目から削除します。よろしいですか？\n（この費目で記録した過去の履歴は、名前とアイコンが残るので消えません）")) return;
+        L.removeCategory(state, c.id);
+        persist();
+        renderCatAdmin();
+      });
+      ul.appendChild(li);
+    });
+  }
+  function addCustomCategory() {
+    var label = ($("#cat-label").value || "").trim();
+    if (!label) { toast("名前を入力してください"); return; }
+    L.addCategory(state, selectedEmoji, label);
+    persist();
+    $("#cat-label").value = "";
+    renderCatAdmin();
+    toast("費目を追加しました");
+  }
+
   function enterAdult() {
     fillAllowanceForm();
     renderWalletEdit();
     renderHistoryAdmin();
+    renderCatAdmin();
     showView("view-adult");
   }
 
@@ -502,7 +606,7 @@
     $("#btn-claim").addEventListener("click", claimAllowance);
     $("#balance-card").addEventListener("click", toggleWalletFlip);
     $("#balance-card").addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleWalletFlip(); } });
-    $("#btn-spend").addEventListener("click", function () { Snd.unlock(); resetSpend(); showView("view-spend"); });
+    $("#btn-spend").addEventListener("click", function () { Snd.unlock(); buildCategoryGrid(); resetSpend(); showView("view-spend"); });
     $("#btn-spend-back").addEventListener("click", function () { showView("view-main"); });
     $("#btn-spend-next").addEventListener("click", goToPay);
 
@@ -523,6 +627,7 @@
     $("#btn-save-allowance").addEventListener("click", saveAllowance);
     $("#btn-test-due").addEventListener("click", simulateAllowanceDay);
     $("#btn-save-name").addEventListener("click", saveName);
+    $("#btn-add-cat").addEventListener("click", addCustomCategory);
     $all('input[name="allow-interval"]').forEach(function (r) { r.addEventListener("change", toggleIntervalFields); });
 
     $("#btn-export").addEventListener("click", doExport);
@@ -537,6 +642,7 @@
 
   function init() {
     buildCategoryGrid();
+    buildEmojiPicker();
     bindEvents();
 
     var changed = false;

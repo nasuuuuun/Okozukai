@@ -4,19 +4,48 @@
 (function (global) {
   "use strict";
 
+  // 組み込みの費目（先頭〜「そのほか」の手前まで）。ユーザー費目はこの間に差し込む。
   var CATEGORIES = [
     { id: "okashi",   icon: "🍬", label: "おかし" },
     { id: "juice",    icon: "🥤", label: "ジュース" },
     { id: "omocha",   icon: "🧸", label: "おもちゃ" },
     { id: "hon",      icon: "📖", label: "ほん" },
-    { id: "game",     icon: "🎮", label: "ゲーム" },
-    { id: "bunbougu", icon: "✏️", label: "ぶんぼうぐ" },
-    { id: "gacha",    icon: "🎰", label: "ガチャ" },
+    { id: "yuugu",    icon: "🎠", label: "ゆうぐ" },
     { id: "other",    icon: "🛍️", label: "そのほか" }
   ];
-  function categoryById(id) {
-    for (var i = 0; i < CATEGORIES.length; i++) if (CATEGORIES[i].id === id) return CATEGORIES[i];
-    return { id: "other", icon: "🛍️", label: "そのほか" };
+  var OTHER_CATEGORY = { id: "other", icon: "🛍️", label: "そのほか" };
+
+  // 組み込み＋ユーザー費目（「そのほか」を必ず末尾に）
+  function allCategories(state) {
+    var builtin = CATEGORIES.slice(0, CATEGORIES.length - 1);
+    var custom = (state && Array.isArray(state.categories)) ? state.categories : [];
+    return builtin.concat(custom).concat([OTHER_CATEGORY]);
+  }
+  // id から費目を引く。組み込み→ユーザー費目の順。見つからなければ「そのほか」。
+  function categoryById(id, state) {
+    var i;
+    for (i = 0; i < CATEGORIES.length; i++) if (CATEGORIES[i].id === id) return CATEGORIES[i];
+    if (state && Array.isArray(state.categories)) {
+      for (i = 0; i < state.categories.length; i++) if (state.categories[i].id === id) return state.categories[i];
+    }
+    return OTHER_CATEGORY;
+  }
+  // ユーザー費目の追加・削除
+  function addCategory(state, icon, label) {
+    if (!Array.isArray(state.categories)) state.categories = [];
+    label = String(label || "").trim().slice(0, 6);
+    if (!label) return null;
+    var cat = {
+      id: "c_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6),
+      icon: icon || "🛍️",
+      label: label
+    };
+    state.categories.push(cat);
+    return cat;
+  }
+  function removeCategory(state, id) {
+    if (!Array.isArray(state.categories)) return;
+    state.categories = state.categories.filter(function (c) { return c.id !== id; });
   }
 
   // ---- お金の種類（セント・大きい順） ----
@@ -70,6 +99,7 @@
       amount: Math.round(Math.abs(t.amount)),
       category: t.category || null,
       icon: t.icon || null,
+      catLabel: t.catLabel || "", // 費目名を履歴に焼き込む（費目を後で消しても表示が壊れないように）
       note: t.note || "",
       coins: t.coins || null,      // この取引で動いた硬貨・紙幣の内訳（入金=入った枚数 / 支払=払った枚数）
       change: Math.round(t.change || 0) // 支払い時のおつり（セント）。逆戻しでこの分の硬貨を取り消す
@@ -129,7 +159,7 @@
   }
 
   // ---- 支払い：payCoins(種類→枚数)を財布から出し、ねだんとの差額をおつりとして戻す ----
-  function spend(state, priceCents, payCoins, catId, icon) {
+  function spend(state, priceCents, payCoins, catId, icon, label) {
     priceCents = roundTo5(priceCents);
     var paid = 0;
     var used = {};
@@ -141,7 +171,7 @@
     });
     var change = paid - priceCents;
     if (change > 0) walletAdd(state.wallet, change);
-    addTransaction(state, { type: "spend", amount: priceCents, category: catId, icon: icon, coins: used, change: change });
+    addTransaction(state, { type: "spend", amount: priceCents, category: catId, icon: icon, catLabel: label || "", coins: used, change: change });
     syncBalance(state);
     return { change: change };
   }
@@ -217,7 +247,8 @@
   }
 
   global.OKLogic = {
-    CATEGORIES: CATEGORIES, categoryById: categoryById,
+    CATEGORIES: CATEGORIES, categoryById: categoryById, allCategories: allCategories,
+    addCategory: addCategory, removeCategory: removeCategory,
     DENOMS: DENOMS, DENOM_META: DENOM_META, emptyWallet: emptyWallet,
     roundTo5: roundTo5, walletBalance: walletBalance, denomsBreakdown: denomsBreakdown, walletAdd: walletAdd,
     walletSub: walletSub,

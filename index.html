@@ -98,11 +98,14 @@
 
       <div class="pay-summary">
         <div class="pay-row"><span class="pay-label">ねだん</span><span class="pay-price" id="pay-price">$0.00</span></div>
-        <div class="pay-row"><span class="pay-label">はらった</span><span class="pay-paid" id="pay-paid">$0.00</span></div>
+        <div class="pay-row"><span class="pay-label">だす おかね</span><span class="pay-paid" id="pay-paid">$0.00</span></div>
         <div class="pay-change" id="pay-change" hidden></div>
       </div>
 
-      <h2 class="section-label">おさいふ から タップしてね</h2>
+      <h2 class="section-label">だす おかね（タップで おさいふに もどす）</h2>
+      <div class="pay-tray" id="pay-tray"></div>
+
+      <h2 class="section-label">おさいふ（タップで だす）</h2>
       <div class="wallet-pay" id="wallet-pay"></div>
 
       <div class="btn-row pay-actions">
@@ -166,6 +169,17 @@
         <button class="smallbtn" id="btn-save-allowance">保存</button>
         <p class="panel__hint">毎週・毎月のどちらか一方を設定します。予定日が来ると、トップ画面に「おこづかいを もらう」ボタンが表示されます（自動では加算されません。ボタンを押して受け取ります）。</p>
         <button class="smallbtn smallbtn--ghost" id="btn-test-due">（テスト）お小遣い日が来た状態にする</button>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel__title">🏷️ 費目（つかいみち）の追加</h2>
+        <p class="panel__hint" style="margin-top:0">「なにに つかった？」に出る項目を増やせます。アイコン（絵文字）を選び、名前を入力して「追加」を押してください。</p>
+        <div class="emoji-picker" id="emoji-picker"></div>
+        <div class="inline-form">
+          <input type="text" id="cat-label" placeholder="名前（例：おやつ）" maxlength="6" />
+          <button class="smallbtn" id="btn-add-cat">追加</button>
+        </div>
+        <ul class="cat-admin-list" id="cat-admin-list"></ul>
       </div>
 
       <div class="panel">

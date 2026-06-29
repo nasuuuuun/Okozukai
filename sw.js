@@ -1,7 +1,7 @@
 /* sw.js — オフライン対応＋更新が自動で反映されるサービスワーカー
    方針：ネット優先（online なら最新を取得しキャッシュ更新／offline ならキャッシュを使用）。
    これにより、ホーム画面アイコンを入れ直さなくても、オンラインで開き直せば更新が反映される。 */
-var CACHE = "okozukai-v7";
+var CACHE = "okozukai-v8";
 var ASSETS = [
   "./",
   "./index.html",
