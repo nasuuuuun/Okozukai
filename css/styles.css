@@ -390,16 +390,17 @@ html, body {
 }
 /* 紙幣（横長） */
 .money--note { aspect-ratio: 2 / 1; min-width: 104px; border-radius: 10px; }
+.denom-5000 { background-image: url(../assets/money/note-50.png); }  /* $50 本物の紙幣写真 */
 .denom-1000 { background-image: url(../assets/money/note-10.jpeg); } /* $10 本物の紙幣写真 */
 .denom-500  { background-image: url(../assets/money/note-5.jpeg); }  /* $5 */
 .denom-200  { background-image: url(../assets/money/note-2.jpeg); }  /* $2 */
-/* 硬貨（円形） */
+/* 硬貨（円形・本物の硬貨写真をcoins.jpgから切り抜き） */
 .money--coin { aspect-ratio: 1 / 1; min-width: 72px; border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,.2); }
-.denom-100 { background-image: url(../assets/money/coin-100.svg); } /* $1 金 */
-.denom-50  { background-image: url(../assets/money/coin-50.svg); }  /* 銀 */
-.denom-20  { background-image: url(../assets/money/coin-20.svg); }
-.denom-10  { background-image: url(../assets/money/coin-10.svg); }
-.denom-5   { background-image: url(../assets/money/coin-5.svg); }   /* 銅 */
+.denom-100 { background-image: url(../assets/money/coin-100.png); } /* $1 */
+.denom-50  { background-image: url(../assets/money/coin-50.png); }  /* 50¢ */
+.denom-20  { background-image: url(../assets/money/coin-20.png); }
+.denom-10  { background-image: url(../assets/money/coin-10.png); }
+.denom-5   { background-image: url(../assets/money/coin-5.png); }   /* 5¢ */
 /* 額面テキストは画像内にあるため隠し、残数だけバッジ表示 */
 .money__val { display: none; }
 .money .money__cnt { align-self: center; margin-bottom: 5px; padding: 1px 8px;

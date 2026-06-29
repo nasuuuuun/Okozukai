@@ -20,8 +20,9 @@
   }
 
   // ---- お金の種類（セント・大きい順） ----
-  var DENOMS = [1000, 500, 200, 100, 50, 20, 10, 5];
+  var DENOMS = [5000, 1000, 500, 200, 100, 50, 20, 10, 5];
   var DENOM_META = {
+    5000: { cents: 5000, label: "$50",  type: "note" },
     1000: { cents: 1000, label: "$10",  type: "note" },
     500:  { cents: 500,  label: "$5",   type: "note" },
     200:  { cents: 200,  label: "$2",   type: "note" },
