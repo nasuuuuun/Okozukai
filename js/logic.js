@@ -1,4 +1,6 @@
-/* logic.js — 残高/立替の更新ルール、自動付与、カテゴリ定義 */
+/* logic.js — 残高の更新ルール、おこづかいの予定/受け取り、カテゴリ定義
+   ※ 立替トラッカー・支払い方法(現金/カード)・自動付与は廃止。recompute 内の
+     method/collect/advanceOwed は旧バックアップ取込み用の互換処理として残置。 */
 (function (global) {
   "use strict";
 
@@ -167,7 +169,7 @@
     return false;
   }
 
-  // 自動付与の設定を保存（金額>0 で初めて有効化したら基準日を今日に）
+  // おこづかいの予定設定を保存（金額>0 で初めて有効化したら基準日を今日に）
   function setAllowance(state, cfg) {
     var a = state.allowance;
     var wasInactive = a.amount <= 0;

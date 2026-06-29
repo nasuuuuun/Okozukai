@@ -313,7 +313,31 @@
     var monthday = parseInt($("#allow-monthday").value, 10);
     L.setAllowance(state, { amount: cents, interval: interval, weekday: weekday, monthday: monthday });
     persist();
-    toast(cents > 0 ? "自動お小遣いを保存しました" : "自動お小遣いをオフにしました");
+    toast(cents > 0 ? "おこづかいの予定を保存しました" : "おこづかいの予定をオフにしました");
+  }
+
+  // （テスト用）お小遣いの予定日が来た状態を再現する。基準日を1回分前に戻し、
+  // ちょうど1回分が未受取になるようにして「もらう」ボタンを出す。
+  function simulateAllowanceDay() {
+    var a = state.allowance;
+    if (!a || a.amount <= 0) { toast("先に金額を設定して保存してください"); return; }
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var lastDue = new Date(today);
+    var guard = 0;
+    while (guard < 40) {
+      if (a.interval === "weekly") { if (lastDue.getDay() === a.weekday) break; }
+      else { if (lastDue.getDate() === Math.min(Math.max(a.monthday, 1), 28)) break; }
+      lastDue.setDate(lastDue.getDate() - 1);
+      guard++;
+    }
+    var prev = new Date(lastDue);
+    if (a.interval === "weekly") prev.setDate(prev.getDate() - 7);
+    else prev.setMonth(prev.getMonth() - 1);
+    a.lastGrantedDate = L.formatYMD(prev);
+    persist();
+    showView("view-main");
+    renderMain();
+    toast("（テスト）お小遣い日が来た状態にしました");
   }
 
   function saveName() {
@@ -414,6 +438,7 @@
 
     $("#btn-add-money").addEventListener("click", addMoney);
     $("#btn-save-allowance").addEventListener("click", saveAllowance);
+    $("#btn-test-due").addEventListener("click", simulateAllowanceDay);
     $("#btn-save-name").addEventListener("click", saveName);
     $all('input[name="allow-interval"]').forEach(function (r) {
       r.addEventListener("change", toggleIntervalFields);

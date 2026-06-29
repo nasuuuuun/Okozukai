@@ -10,20 +10,19 @@
 
 ## データと保存
 - 保存先は **localStorage の 1 キー `okozukai_state`**（JSON）。サーバー・ログインなし。
-- **通貨はシンガポールドル（SGD）。金額はすべて「セント単位の整数」で保存・計算**し、表示時のみ `S$X.XX` に整形（`app.js` の `money()`/`fmtAmt()`/`numPart()`、入力は `dollarsToCents()`）。子ども画面のテンキーはレジ方式（押した数字がセントとして積み上がる）。
-- **残高 `balance` と立替残 `advanceOwed` は `transactions` から都度再計算する**のが原則
-  （`OKLogic.recompute`）。トランザクションが唯一の正解。直接 balance を書き換えない。
+- **通貨はシンガポールドル。記号は `$`。金額はすべて「セント単位の整数」で保存・計算**し、表示時のみ `$X.XX` に整形（`app.js` の `money()`/`fmtAmt()`/`numPart()`、入力は `dollarsToCents()`）。子ども画面の「つかう」テンキーは電卓方式（数字＝ドル、小数点ボタン以降＝セント2桁）。
+- **残高 `balance` は `transactions` から都度再計算**（`OKLogic.recompute`）。トランザクションが唯一の正解。直接 balance を書き換えない。
 
-## 立替モデル（最重要・壊さないこと）
-- `add` / `allowance`：`balance += amount`
-- `spend` + `method="cash"`：`balance -= amount`（立替は不変）
-- `spend` + `method="card"`：`balance -= amount` かつ `advanceOwed += amount`
-- `collect`：`advanceOwed -= amount`（**balance は変えない**）
+## 残高モデル（最重要・壊さないこと）
+- `add`（臨時追加）/ `allowance`（おこづかい受取）：`balance += amount`
+- `spend`：`balance -= amount`
+- **おこづかいは自動加算しない**。予定日が来たらメインに「もらう」ボタンを出し、タップで1回分を加算（`pendingCount` / `claimOneAllowance`、基準日は `ensureAllowanceBaseline`）。
+- ※ 立替トラッカー・支払い方法(現金/カード)・自動付与は廃止済み。`recompute` 内に残る `method`/`collect`/`advanceOwed` の処理は**旧バックアップ取込みのための互換用**。新規には作られない。
 
 ## UI 方針
 - スマホ縦・大きなタッチ領域。子どもが読める大きな数字＋絵＋アニメ＋効果音。
 - 効果音は WebAudio で生成（音声ファイルを持たない）。アイコンは絵文字＋CSS（画像を持たない）。
-- おとなメニューは簡単な計算ゲートで保護。
+- 設定画面は保護者用（子どもには触らせない運用）。計算ゲートは `GATE_ENABLED=false` で無効化中（コードは残置、再有効化可）。トップのアイコンは 👛（おさいふ）。
 
 ## 動作確認
 - `python -m http.server 8000`（または `npx serve`）で配信してブラウザで確認するのが確実。

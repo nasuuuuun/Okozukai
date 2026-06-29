@@ -93,11 +93,11 @@
           <input type="number" inputmode="decimal" step="0.01" id="add-amount" placeholder="金額（例 5.00）" min="0" />
           <button class="smallbtn" id="btn-add-money">足す</button>
         </div>
-        <p class="panel__hint">お年玉やご褒美など、現金で渡した分を残高に追加します。</p>
+        <p class="panel__hint">臨時のおこづかい（お年玉・ごほうび など）を残高に追加します。</p>
       </div>
 
       <div class="panel">
-        <h2 class="panel__title">🗓️ 自動お小遣い</h2>
+        <h2 class="panel__title">🗓️ おこづかいの予定（もらう日）</h2>
         <div class="inline-form">
           <span class="cur">$</span>
           <input type="number" inputmode="decimal" step="0.01" id="allow-amount" placeholder="1回の金額（例 3.00）" min="0" />
@@ -124,7 +124,8 @@
           <span>日</span>
         </div>
         <button class="smallbtn" id="btn-save-allowance">保存</button>
-        <p class="panel__hint">毎週・毎月のどちらか一方を設定します。アプリを開いたとき、予定日を過ぎていれば自動で付与されます。</p>
+        <p class="panel__hint">毎週・毎月のどちらか一方を設定します。予定日が来ると、トップ画面に「おこづかいを もらう」ボタンが表示されます（自動では加算されません。ボタンを押して受け取ります）。</p>
+        <button class="smallbtn smallbtn--ghost" id="btn-test-due">（テスト）お小遣い日が来た状態にする</button>
       </div>
 
       <div class="panel">
