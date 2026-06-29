@@ -117,7 +117,25 @@
     });
   }
   function renderHistoryMain() { renderHistoryInto($("#history-list-main"), 6, "まだ きろくが ないよ"); }
-  function renderHistoryAdmin() { renderHistoryInto($("#history-list-admin"), 50, "まだ記録がありません"); }
+  function renderHistoryAdmin() {
+    var ul = $("#history-list-admin");
+    ul.innerHTML = "";
+    var items = state.transactions.slice(0, 50);
+    if (items.length === 0) { ul.innerHTML = '<li class="hist-empty">まだ記録がありません</li>'; return; }
+    items.forEach(function (tx) {
+      var li = document.createElement("li");
+      li.className = "hist-item";
+      li.innerHTML = historyItemHTML(tx) + '<button class="hist-del" type="button" aria-label="削除">削除</button>';
+      li.querySelector(".hist-del").addEventListener("click", function () {
+        if (!confirm("この記録を削除します。よろしいですか？\n（お金〔残高〕は変わりません。残高を直すときは「おさいふの中身を修正」を使ってください）")) return;
+        L.removeTransaction(state, tx.id);
+        persist();
+        renderHistoryAdmin();
+        renderMain();
+      });
+      ul.appendChild(li);
+    });
+  }
 
   // ---------- メイン ----------
   function renderMain() {
@@ -232,25 +250,37 @@
     var wrap = $("#wallet-pay");
     wrap.innerHTML = "";
     var any = false;
+    var STACK_MAX = 12; // これを超える枚数は、実物を並べず1枚＋「のこりN」にする
     L.DENOMS.forEach(function (d) {
       var owned = state.wallet[d] || 0;
       if (owned <= 0) return;
       any = true;
       var avail = owned - (payState.coins[d] || 0);
+      if (avail <= 0) return; // 全部はらい終えた種類は出さない
       var m = L.DENOM_META[d];
-      var btn = document.createElement("button");
-      btn.className = "money money--" + m.type + " denom-" + d + (avail <= 0 ? " is-empty" : "");
-      btn.disabled = avail <= 0;
-      btn.innerHTML = '<span class="money__val">' + m.label + '</span><span class="money__cnt">のこり ' + avail + '</span>';
-      btn.addEventListener("click", function () {
-        if ((state.wallet[d] || 0) - (payState.coins[d] || 0) <= 0) return;
-        payState.coins[d] = (payState.coins[d] || 0) + 1;
-        Snd.tap();
-        renderPay();
-      });
-      wrap.appendChild(btn);
+      if (avail > STACK_MAX) {
+        var stack = makePayTile(d, m);
+        stack.classList.add("is-stack");
+        stack.innerHTML = '<span class="money__cnt">のこり ' + avail + '</span>';
+        wrap.appendChild(stack);
+      } else {
+        for (var i = 0; i < avail; i++) wrap.appendChild(makePayTile(d, m));
+      }
     });
     if (!any) wrap.innerHTML = '<p class="hist-empty">おさいふが からっぽだよ</p>';
+  }
+  // 支払いパレットの1枚（硬貨/紙幣の実物イラスト）。タップで1枚はらう。
+  function makePayTile(d, m) {
+    var btn = document.createElement("button");
+    btn.className = "money money--" + m.type + " denom-" + d + " paytile";
+    btn.setAttribute("aria-label", m.label);
+    btn.addEventListener("click", function () {
+      if ((state.wallet[d] || 0) - (payState.coins[d] || 0) <= 0) return;
+      payState.coins[d] = (payState.coins[d] || 0) + 1;
+      Snd.tap();
+      renderPay();
+    });
+    return btn;
   }
   function clearPay() { payState.coins = {}; Snd.tap(); renderPay(); }
   function confirmPay() {
@@ -420,6 +450,8 @@
 
     $("#btn-adult").addEventListener("click", function () { Snd.unlock(); if (GATE_ENABLED) openGate(); else enterAdult(); });
     $("#btn-adult-back").addEventListener("click", function () { showView("view-main"); });
+    $("#btn-open-wallet").addEventListener("click", function () { renderWalletEdit(); showView("view-wallet"); });
+    $("#btn-wallet-back").addEventListener("click", function () { showView("view-adult"); });
 
     $("#gate-ok").addEventListener("click", checkGate);
     $("#gate-cancel").addEventListener("click", closeGate);

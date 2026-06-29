@@ -36,11 +36,11 @@
 
       <button class="bigbtn bigbtn--spend" id="btn-spend">
         <span class="bigbtn__icon">🛍️</span>
-        <span class="bigbtn__text">つかう</span>
+        <span class="bigbtn__text">おかいもの</span>
       </button>
 
       <div class="history">
-        <h2 class="history__title">さいきん つかったもの</h2>
+        <h2 class="history__title">さいきんの おかいもの</h2>
         <ul class="history__list" id="history-list-main"></ul>
       </div>
     </section>
@@ -49,7 +49,7 @@
     <section id="view-spend" class="view">
       <header class="topbar">
         <button class="iconbtn" id="btn-spend-back" aria-label="もどる">←</button>
-        <h1 class="topbar__title">なにを つかう？</h1>
+        <h1 class="topbar__title">いくら つかう？</h1>
         <span class="iconbtn iconbtn--ghost"></span>
       </header>
 
@@ -122,8 +122,8 @@
 
       <div class="panel">
         <h2 class="panel__title">👛 おさいふの なかみ</h2>
-        <div class="wallet-edit" id="wallet-edit"></div>
-        <p class="panel__hint">いまの硬貨・紙幣の枚数です。最初のセットや、ずれた時の修正に使います（合計が残高になります）。</p>
+        <p class="panel__hint" style="margin-top:0">硬貨・紙幣の枚数を直接いじれる画面です。合計がそのまま残高になるため、通常は触らず、最初のセットやズレの修正のときだけ使ってください。</p>
+        <button class="smallbtn smallbtn--ghost" id="btn-open-wallet" style="margin-top:10px">おさいふの中身を修正する →</button>
       </div>
 
       <div class="panel">
@@ -179,6 +179,21 @@
           <input type="file" id="import-file" accept="application/json" hidden />
         </div>
         <p class="panel__hint">データはこの端末内に保存されます。機種変更の前などに書き出しておくと安心です。</p>
+      </div>
+    </section>
+
+    <!-- ===== おさいふ修正（保護者向けサブ画面） ===== -->
+    <section id="view-wallet" class="view">
+      <header class="topbar">
+        <button class="iconbtn" id="btn-wallet-back" aria-label="戻る">←</button>
+        <h1 class="topbar__title">おさいふの中身を修正</h1>
+        <span class="iconbtn iconbtn--ghost"></span>
+      </header>
+
+      <div class="panel">
+        <h2 class="panel__title">👛 硬貨・紙幣の枚数</h2>
+        <div class="wallet-edit" id="wallet-edit"></div>
+        <p class="panel__hint">＋／−で枚数を調整します。合計がそのまま残高になります。最初のセットや、実物とズレた時の修正に使ってください。</p>
       </div>
     </section>
 

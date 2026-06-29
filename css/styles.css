@@ -151,9 +151,9 @@ html, body {
   50% { transform: scale(1.03); box-shadow: 0 10px 26px rgba(255, 160, 40, .45); }
 }
 .bigbtn--confirm {
-  margin-top: 18px;
-  padding: 18px;
-  font-size: 1.4rem;
+  margin-top: 12px;
+  padding: 14px;
+  font-size: 1.3rem;
   background: linear-gradient(135deg, var(--pink), var(--pink-dark));
 }
 .bigbtn--confirm:disabled { opacity: .4; box-shadow: none; cursor: not-allowed; }
@@ -187,29 +187,29 @@ html, body {
 /* ===== つかう：金額表示 ===== */
 .spend-amount {
   text-align: center;
-  font-size: clamp(2.4rem, 13vw, 3.4rem);
+  font-size: clamp(2rem, 11vw, 3rem);
   font-weight: 900;
   color: var(--ink);
   background: #fff;
-  border-radius: var(--radius);
-  padding: 16px;
+  border-radius: 18px;
+  padding: 10px;
   box-shadow: var(--shadow);
 }
 .spend-amount .cur { color: var(--ink-soft); font-size: .55em; margin-right: 3px; }
 
 /* ===== テンキー ===== */
 .keypad {
-  margin: 14px 0 6px;
+  margin: 8px 0 4px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 .key {
   border: none;
   background: #fff;
-  border-radius: 16px;
-  padding: 16px 0;
-  font-size: 1.6rem;
+  border-radius: 14px;
+  padding: 11px 0;
+  font-size: 1.45rem;
   font-weight: 800;
   color: var(--ink);
   box-shadow: 0 4px 10px rgba(180,90,130,.1);
@@ -220,23 +220,23 @@ html, body {
 .key--dot { color: var(--mint-dark); }
 
 /* ===== セクションラベル ===== */
-.section-label { margin: 16px 4px 8px; font-size: 1rem; color: var(--ink-soft); font-weight: 800; }
+.section-label { margin: 10px 4px 6px; font-size: 1rem; color: var(--ink-soft); font-weight: 800; }
 
 /* ===== カテゴリ ===== */
-.cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .cat {
   border: 3px solid transparent;
   background: #fff;
-  border-radius: 16px;
-  padding: 10px 4px;
+  border-radius: 14px;
+  padding: 6px 4px;
   cursor: pointer;
   text-align: center;
   box-shadow: 0 3px 8px rgba(180,90,130,.08);
 }
 .cat:active { transform: scale(.95); }
 .cat.selected { border-color: var(--mint); background: #ecfdf5; }
-.cat__icon { font-size: 1.7rem; }
-.cat__label { font-size: .72rem; font-weight: 700; margin-top: 2px; }
+.cat__icon { font-size: 1.5rem; }
+.cat__label { font-size: .7rem; font-weight: 700; margin-top: 1px; }
 
 /* ===== 支払い方法 ===== */
 .method-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -405,9 +405,13 @@ html, body {
 .money .money__cnt { align-self: center; margin-bottom: 5px; padding: 1px 8px;
   border-radius: 999px; background: rgba(0,0,0,.55); color: #fff; opacity: 1; }
 
-/* 支払いパレット */
-.wallet-pay { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-.wallet-pay .money { min-height: 60px; justify-content: center; }
+/* 支払いパレット：のこっている枚数ぶんの実物（紙幣/硬貨）を並べる。
+   min-height は付けない（aspect-ratio を保ち、背景画像の端が切れないように） */
+.wallet-pay { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.wallet-pay .money--note { min-width: 88px; }
+.wallet-pay .money--coin { min-width: 50px; }
+.wallet-pay .is-stack { justify-content: center; min-width: 84px; }
+.wallet-pay .is-stack .money__cnt { margin-bottom: 0; font-size: .64rem; white-space: nowrap; }
 
 /* 支払いサマリー */
 .pay-summary { background:#fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 18px; }
