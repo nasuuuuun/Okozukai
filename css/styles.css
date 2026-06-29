@@ -383,18 +383,27 @@ html, body {
 .money.is-empty { opacity: .32; cursor: not-allowed; }
 .money--sm { min-width: 56px; padding: 6px 12px; box-shadow: none; }
 .money--sm .money__val { font-size: 1rem; }
-/* 紙幣 */
-.money--note { color: #fff; }
-.denom-1000 { background: linear-gradient(135deg,#ff8a5c,#e8543a); } /* $10 */
-.denom-500  { background: linear-gradient(135deg,#5fd39b,#2faf78); } /* $5 */
-.denom-200  { background: linear-gradient(135deg,#b48cff,#8a5cf0); } /* $2 */
-/* 硬貨 */
-.money--coin { color: #5a4a16; }
-.denom-100 { background: radial-gradient(circle at 34% 28%,#ffe680,#f4b81f); } /* $1 金 */
-.denom-50  { background: radial-gradient(circle at 34% 28%,#f3f5f8,#c4ccd6); } /* 銀 */
-.denom-20  { background: radial-gradient(circle at 34% 28%,#f3f5f8,#c4ccd6); }
-.denom-10  { background: radial-gradient(circle at 34% 28%,#f3f5f8,#c4ccd6); }
-.denom-5   { background: radial-gradient(circle at 34% 28%,#f6c89a,#cf915a); } /* 銅 */
+/* 紙幣・硬貨はSVGイラスト（額面は画像内に内蔵）。背景画像で描画 */
+.money--note, .money--coin {
+  padding: 0; background-size: cover; background-position: center; background-repeat: no-repeat;
+  justify-content: flex-end; align-items: stretch; overflow: hidden;
+}
+/* 紙幣（横長） */
+.money--note { aspect-ratio: 2 / 1; min-width: 104px; border-radius: 10px; }
+.denom-1000 { background-image: url(../assets/money/note-10.svg); } /* $10 */
+.denom-500  { background-image: url(../assets/money/note-5.svg); }  /* $5 */
+.denom-200  { background-image: url(../assets/money/note-2.svg); }  /* $2 */
+/* 硬貨（円形） */
+.money--coin { aspect-ratio: 1 / 1; min-width: 72px; border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,.2); }
+.denom-100 { background-image: url(../assets/money/coin-100.svg); } /* $1 金 */
+.denom-50  { background-image: url(../assets/money/coin-50.svg); }  /* 銀 */
+.denom-20  { background-image: url(../assets/money/coin-20.svg); }
+.denom-10  { background-image: url(../assets/money/coin-10.svg); }
+.denom-5   { background-image: url(../assets/money/coin-5.svg); }   /* 銅 */
+/* 額面テキストは画像内にあるため隠し、残数だけバッジ表示 */
+.money__val { display: none; }
+.money .money__cnt { align-self: center; margin-bottom: 5px; padding: 1px 8px;
+  border-radius: 999px; background: rgba(0,0,0,.55); color: #fff; opacity: 1; }
 
 /* 支払いパレット */
 .wallet-pay { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
