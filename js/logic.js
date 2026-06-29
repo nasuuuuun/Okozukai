@@ -120,6 +120,53 @@
     return n;
   }
 
+  // last の次の付与日（today まで）を1つ返す。なければ null。
+  function firstPendingDate(last, today, a) {
+    var cur = new Date(last.getFullYear(), last.getMonth(), last.getDate());
+    cur.setDate(cur.getDate() + 1);
+    var guard = 0;
+    while (cur <= today && guard < 3660) {
+      if (a.interval === "weekly") {
+        if (cur.getDay() === a.weekday) return cur;
+      } else {
+        var md = Math.min(Math.max(a.monthday, 1), 28);
+        if (cur.getDate() === md) return cur;
+      }
+      cur.setDate(cur.getDate() + 1);
+      guard++;
+    }
+    return null;
+  }
+
+  // 未受取の回数（「おこづかいをもらう」ボタンを出すか判定）
+  function pendingCount(state, now) {
+    var a = state.allowance;
+    if (!a || a.amount <= 0 || !a.lastGrantedDate) return 0;
+    return countGrants(parseYMD(a.lastGrantedDate), toDateOnly(now || new Date()), a);
+  }
+
+  // 1回分だけ受け取る（ボタンタップで呼ぶ）。受け取ったら true。
+  function claimOneAllowance(state, now) {
+    var a = state.allowance;
+    if (!a || a.amount <= 0 || !a.lastGrantedDate) return false;
+    var today = toDateOnly(now || new Date());
+    var d = firstPendingDate(parseYMD(a.lastGrantedDate), today, a);
+    if (!d) return false;
+    a.lastGrantedDate = formatYMD(d);
+    addTransaction(state, { type: "allowance", amount: a.amount, icon: "🗓️", note: "おこづかい" });
+    return true;
+  }
+
+  // 基準日が未設定なら今日に（初回オープン時に呼ぶ）。設定したら true。
+  function ensureAllowanceBaseline(state, now) {
+    var a = state.allowance;
+    if (a && a.amount > 0 && !a.lastGrantedDate) {
+      a.lastGrantedDate = formatYMD(toDateOnly(now || new Date()));
+      return true;
+    }
+    return false;
+  }
+
   // 自動付与の設定を保存（金額>0 で初めて有効化したら基準日を今日に）
   function setAllowance(state, cfg) {
     var a = state.allowance;
@@ -144,6 +191,9 @@
     grantDueAllowance: grantDueAllowance,
     setAllowance: setAllowance,
     countGrants: countGrants,
+    pendingCount: pendingCount,
+    claimOneAllowance: claimOneAllowance,
+    ensureAllowanceBaseline: ensureAllowanceBaseline,
     formatYMD: formatYMD,
     parseYMD: parseYMD
   };

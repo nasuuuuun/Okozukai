@@ -171,6 +171,27 @@
     $("#main-greeting").textContent = state.childName ? (state.childName + "の おこづかい") : "おこづかい";
     $("#balance-value").textContent = numPart(state.balance);
     renderHistoryMain();
+    updateClaimButton();
+  }
+
+  // お小遣いの日が来たら「おこづかいをもらう」ボタンを出す（自動では加算しない）
+  function updateClaimButton() {
+    var btn = $("#btn-claim");
+    if (!btn) return;
+    btn.hidden = (L.pendingCount(state, new Date()) <= 0);
+  }
+
+  function claimAllowance() {
+    Snd.unlock();
+    var before = state.balance;
+    if (!L.claimOneAllowance(state, new Date())) { updateClaimButton(); return; }
+    persist();
+    renderMain();
+    Snd.cheer();
+    confetti();
+    spawnCoins("in", 8);
+    animateBalance(before, state.balance);
+    toast("🎉 おこづかい " + money(state.allowance.amount) + " を もらったよ！");
   }
 
   // ---------- つかうフロー（電卓方式：数字→ドル、小数点→セント） ----------
@@ -376,6 +397,7 @@
 
   // ---------- 初期化・イベント結線 ----------
   function bindEvents() {
+    $("#btn-claim").addEventListener("click", claimAllowance);
     $("#btn-spend").addEventListener("click", function () { Snd.unlock(); resetSpend(); showView("view-spend"); });
     $("#btn-spend-back").addEventListener("click", function () { showView("view-main"); });
     $("#btn-spend-confirm").addEventListener("click", confirmSpend);
@@ -411,18 +433,8 @@
     buildCategoryGrid();
     bindEvents();
 
-    var granted = L.grantDueAllowance(state, new Date());
-    persist();
+    if (L.ensureAllowanceBaseline(state, new Date())) persist();
     renderMain();
-
-    if (granted > 0) {
-      var total = granted * state.allowance.amount;
-      setTimeout(function () {
-        Snd.cheer();
-        confetti();
-        toast("🗓️ おこづかい " + money(total) + " が はいったよ！");
-      }, 400);
-    }
 
     if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
       navigator.serviceWorker.register("sw.js").catch(function () {});
