@@ -25,7 +25,7 @@
       <div class="balance-card" id="balance-card">
         <div class="piggy">🐷</div>
         <div class="balance-label">いまの おこづかい</div>
-        <div class="balance-amount"><span class="cur">S$</span><span id="balance-value">0.00</span></div>
+        <div class="balance-amount"><span class="cur">$</span><span id="balance-value">0.00</span></div>
         <div class="coin-layer" id="coin-layer" aria-hidden="true"></div>
       </div>
 
@@ -49,7 +49,7 @@
       </header>
 
       <div class="spend-amount">
-        <span class="cur">S$</span><span id="spend-amount-value">0.00</span>
+        <span class="cur">$</span><span id="spend-amount-value">0</span>
       </div>
 
       <div class="keypad" id="keypad">
@@ -62,25 +62,13 @@
         <button class="key" data-key="7">7</button>
         <button class="key" data-key="8">8</button>
         <button class="key" data-key="9">9</button>
-        <button class="key key--wide" data-key="00">00</button>
+        <button class="key key--dot" data-key=".">．</button>
         <button class="key" data-key="0">0</button>
         <button class="key key--del" data-key="del">⌫</button>
       </div>
 
       <h2 class="section-label">なにに つかった？</h2>
       <div class="cat-grid" id="cat-grid"></div>
-
-      <h2 class="section-label">どうやって はらう？</h2>
-      <div class="method-row">
-        <button class="method" data-method="cash">
-          <span class="method__icon">💰</span>
-          <span class="method__text">げんきん</span>
-        </button>
-        <button class="method" data-method="card">
-          <span class="method__icon">💳</span>
-          <span class="method__text">カード<small>（おうちのひと）</small></span>
-        </button>
-      </div>
 
       <button class="bigbtn bigbtn--confirm" id="btn-spend-confirm" disabled>けってい</button>
     </section>
@@ -96,34 +84,17 @@
       <div class="panel">
         <h2 class="panel__title">💴 お小遣いを足す</h2>
         <div class="inline-form">
-          <span class="cur">S$</span>
+          <span class="cur">$</span>
           <input type="number" inputmode="decimal" step="0.01" id="add-amount" placeholder="金額（例 5.00）" min="0" />
           <button class="smallbtn" id="btn-add-money">足す</button>
         </div>
         <p class="panel__hint">お年玉やご褒美など、現金で渡した分を残高に追加します。</p>
       </div>
 
-      <div class="panel panel--advance">
-        <h2 class="panel__title">🧮 立替トラッカー</h2>
-        <p class="advance-line">
-          子が親に返す現金（立替の残り）：
-          <strong id="advance-value">S$0.00</strong>
-        </p>
-        <div class="inline-form">
-          <span class="cur">S$</span>
-          <input type="number" inputmode="decimal" step="0.01" id="collect-amount" placeholder="回収した金額" min="0" />
-          <button class="smallbtn" id="btn-collect">回収</button>
-        </div>
-        <p class="panel__hint">
-          カードで立て替えた分がここに溜まります。都合のよいタイミングで、キリのよい金額の現金を
-          子から受け取り、その額を入力してください。残高は変わりません（立替の精算のみ）。
-        </p>
-      </div>
-
       <div class="panel">
         <h2 class="panel__title">🗓️ 自動お小遣い</h2>
         <div class="inline-form">
-          <span class="cur">S$</span>
+          <span class="cur">$</span>
           <input type="number" inputmode="decimal" step="0.01" id="allow-amount" placeholder="1回の金額（例 3.00）" min="0" />
         </div>
         <div class="radio-row">
@@ -177,7 +148,7 @@
 
   </div>
 
-  <!-- ===== 設定ゲート モーダル（保護者向け：通常の日本語） ===== -->
+  <!-- ===== 設定ゲート モーダル（現在は無効。今後オンにする場合に使用） ===== -->
   <div id="gate" class="modal" hidden>
     <div class="modal__box">
       <p class="modal__title">保護者の方のみ</p>

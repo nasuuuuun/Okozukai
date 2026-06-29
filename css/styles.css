@@ -93,7 +93,7 @@ html, body {
   margin-top: 6px;
   font-weight: 900;
   font-size: clamp(2.8rem, 16vw, 4.4rem);
-  color: var(--pink-dark);
+  color: var(--ink);
   line-height: 1.05;
   letter-spacing: -.01em;
 }
@@ -204,6 +204,7 @@ html, body {
 }
 .key:active { transform: scale(.95); background: #fff0f6; }
 .key--del { color: var(--pink-dark); }
+.key--dot { color: var(--mint-dark); }
 
 /* ===== セクションラベル ===== */
 .section-label { margin: 16px 4px 8px; font-size: 1rem; color: var(--ink-soft); font-weight: 800; }
