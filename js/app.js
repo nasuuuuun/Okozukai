@@ -201,6 +201,43 @@
     if (e.inner.classList.contains("is-flipped")) cardShowFront();
     else cardShowBack();
   }
+  // 入金演出：残高カードを「おさいふの中身」面にフリップし、今回増えた紙幣・硬貨が
+  // 上からスッと加わるアニメ。addedCoins は deposit が返す内訳（種類→増えた枚数）。
+  function animateDepositIntoWallet(addedCoins) {
+    if (!addedCoins) return false;
+    var total = 0;
+    L.DENOMS.forEach(function (d) { total += (addedCoins[d] || 0); });
+    if (total <= 0) return false;
+
+    cardShowBack(); // 新しいお金も含めて裏面を描画してフリップ
+    var wrap = $("#wallet-view-tiles");
+    if (!wrap) return false;
+
+    // 今回増えた分のタイル（各種類の末尾 added 枚）をいったん隠しておく
+    var fresh = [];
+    L.DENOMS.forEach(function (d) {
+      var added = addedCoins[d] || 0;
+      if (added <= 0) return;
+      var tiles = wrap.querySelectorAll(".denom-" + d);
+      for (var i = Math.max(0, tiles.length - added); i < tiles.length; i++) {
+        tiles[i].style.visibility = "hidden";
+        fresh.push(tiles[i]);
+      }
+    });
+
+    // フリップが終わってから、増えた分を少しずつ上から落とし込む
+    setTimeout(function () {
+      fresh.forEach(function (el, idx) {
+        setTimeout(function () {
+          var r = el.getBoundingClientRect();
+          if (!r.width) { el.style.visibility = ""; return; }
+          flyTile({ left: r.left, top: r.top - 140, width: r.width, height: r.height }, el, { fade: true });
+          if (idx < 6) Snd.tap();
+        }, idx * 80);
+      });
+    }, 620);
+    return true;
+  }
 
   // ---------- メイン ----------
   function renderMain() {
@@ -216,13 +253,13 @@
   }
   function claimAllowance() {
     Snd.unlock();
-    var before = state.balance;
     if (!L.claimOneAllowance(state, new Date())) { updateClaimButton(); return; }
     persist();
-    renderMain();
+    var added = (state.transactions[0] && state.transactions[0].coins) || null;
     renderWalletEdit();
-    Snd.cheer(); confetti(); spawnCoins("in", 8);
-    animateBalance(before, state.balance);
+    renderMain();
+    Snd.cheer(); confetti();
+    animateDepositIntoWallet(added); // おさいふ面にフリップして増えたお金がスッと入る
     toast("🎉 おこづかい " + money(state.allowance.amount) + " を もらったよ！");
   }
 
@@ -366,8 +403,9 @@
     var destEl = dests.length ? dests[dests.length - 1] : null;
     if (destEl) flyTile(srcRect, destEl);
   }
-  // タップした位置から移動先へ実物がスッとスライドする演出（FLIP）
-  function flyTile(srcRect, destEl) {
+  // タップした位置から移動先へ実物がスッとスライドする演出（FLIP）。opts.fade で出現フェードも付ける。
+  function flyTile(srcRect, destEl, opts) {
+    opts = opts || {};
     var destRect = destEl.getBoundingClientRect();
     if (!destRect.width || !srcRect.width) return;
     destEl.style.visibility = "hidden";
@@ -381,7 +419,9 @@
     clone.style.margin = "0";
     clone.style.zIndex = "80";
     clone.style.pointerEvents = "none";
-    clone.style.transition = "transform .3s cubic-bezier(.35,1.15,.4,1)";
+    var trans = "transform .3s cubic-bezier(.35,1.15,.4,1)";
+    if (opts.fade) { trans += ", opacity .3s ease"; clone.style.opacity = "0"; }
+    clone.style.transition = trans;
     document.body.appendChild(clone);
     var dx = destRect.left - srcRect.left;
     var dy = destRect.top - srcRect.top;
@@ -389,6 +429,7 @@
     var sy = (destRect.height / srcRect.height) || 1;
     requestAnimationFrame(function () {
       clone.style.transform = "translate(" + dx + "px," + dy + "px) scale(" + sx + "," + sy + ")";
+      if (opts.fade) clone.style.opacity = "1";
     });
     var done = function () { if (clone.parentNode) clone.remove(); destEl.style.visibility = ""; };
     clone.addEventListener("transitionend", done, { once: true });
@@ -416,14 +457,14 @@
   function addMoney() {
     var cents = L.roundTo5(dollarsToCents($("#add-amount").value));
     if (cents <= 0) { toast("金額を入力してください"); return; }
-    var before = state.balance;
-    L.deposit(state, cents, "add", { icon: "🎁", note: "ついか" });
+    var tx = L.deposit(state, cents, "add", { icon: "🎁", note: "ついか" });
     persist();
     $("#add-amount").value = "";
-    renderMain(); renderWalletEdit();
     showView("view-main");
-    Snd.cheer(); confetti(); spawnCoins("in", 7);
-    animateBalance(before, state.balance);
+    renderWalletEdit();
+    renderMain();
+    Snd.cheer(); confetti();
+    animateDepositIntoWallet(tx ? tx.coins : null); // おさいふ面にフリップして増えたお金がスッと入る
     toast("+" + money(cents) + " ふえたよ！");
   }
 
